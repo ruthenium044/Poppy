@@ -1,32 +1,11 @@
-# Prerequisites
-*.d
+# Exclude out/ directory
+out/
 
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Exclude out/build... directory
+out/build
 
-# Precompiled Headers
-*.gch
-*.pch
+# Exclude any sort of build/ directory
+build/
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-*.smod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# Exclude .vs directory
+.vs/
