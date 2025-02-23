@@ -59,28 +59,8 @@ unsigned int createAndLinkProgram( unsigned int shaders[], int count)
 	return shaderProgram;
 }
 
-static void setUpDrawTriangle()
+static void CompileAndLinkShaders( unsigned int& shaderProgram )
 {
-	float vertices[] = 
-	{
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f
-	};
-
-	//init?
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-
-	//bind buffer
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	//copy data to buffer
-	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-	//GL_STATIC_DRAW : the data is set only once and used many times.
-	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
 	//Create and compile shaders
 	unsigned int vertexShader = glCreateShader( GL_VERTEX_SHADER );
 	compileShader(vertexShader, vertexShaderSource);
@@ -90,9 +70,45 @@ static void setUpDrawTriangle()
 
 	//Create and link shader programs
 	unsigned int shaders[] = { vertexShader, fragmentShader };
-	unsigned int shaderProgram = createAndLinkProgram(shaders, SDL_arraysize(shaders));
+	shaderProgram = createAndLinkProgram(shaders, SDL_arraysize(shaders));
+}
 
+static void setUpDrawTriangle()
+{
+	float vertices[] = 
+	{
+		-0.5f, -0.5f, 0.0f,
+		0.5f, -0.5f, 0.0f,
+		0.0f,  0.5f, 0.0f
+	};
+
+	//VAO
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	//VBO
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+
+	//bind buffer and copy data to buffer
+	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+	//GL_STATIC_DRAW : the data is set only once and used many times.
+	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	//Set vertex attributes pointers
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	unsigned int shaderProgram;
+	CompileAndLinkShaders( shaderProgram );
+
+	//Use shader program when rendering
 	glUseProgram(shaderProgram);
+	glBindVertexArray(VAO);
+	glDrawArrays(GL_TRIANGLES, 0, 3);
 }
 
 int main()
@@ -172,6 +188,8 @@ int main()
 		// Clear screen
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		setUpDrawTriangle();
 
 		// Update window
 		SDL_GL_SwapWindow(window);
