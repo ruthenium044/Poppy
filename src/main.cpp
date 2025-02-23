@@ -73,42 +73,61 @@ static void CompileAndLinkShaders( unsigned int& shaderProgram )
 	shaderProgram = createAndLinkProgram(shaders, SDL_arraysize(shaders));
 }
 
-static void setUpDrawTriangle()
+static void DrawTriangle()
 {
-	float vertices[] = 
-	{
-		-0.5f, -0.5f, 0.0f,
-		0.5f, -0.5f, 0.0f,
-		0.0f,  0.5f, 0.0f
+	float vertices[] = {
+	 0.5f,  0.5f, 0.0f,  // top right
+	 0.5f, -0.5f, 0.0f,  // bottom right
+	-0.5f, -0.5f, 0.0f,  // bottom left
+	-0.5f,  0.5f, 0.0f   // top left 
 	};
+	unsigned int indices[] = {  // note that we start from 0!
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+	//GL_STATIC_DRAW : the data is set only once and used many times.
+	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
+
+	//VBO
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
 	//VAO
 	unsigned int VAO;
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
-	//VBO
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-
-	//bind buffer and copy data to buffer
-	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-	//GL_STATIC_DRAW : the data is set only once and used many times.
-	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+	//EBO
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Set vertex attributes pointers
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
-
+	
 	unsigned int shaderProgram;
 	CompileAndLinkShaders( shaderProgram );
 
 	//Use shader program when rendering
 	glUseProgram(shaderProgram);
-	glBindVertexArray(VAO);
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+
+	//unbinds?
+	//vao unbnd before ebo
+	//glDeleteVertexArrays(1, &VAO);
+	//glDeleteBuffers(1, &VBO);
+	//glDeleteBuffers(1, &EBO);
+	//glDeleteProgram(shaderProgram);
 }
 
 int main()
@@ -162,6 +181,8 @@ int main()
 	// Event handler
 	SDL_Event e;
 
+	bool wirefame = false;
+
 	while (!quit)
 	{
 		while (SDL_PollEvent(&e) != 0)
@@ -185,11 +206,16 @@ int main()
 			}
 		}
 
+		if(wirefame)
+		{
+			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+		}
+
 		// Clear screen
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		setUpDrawTriangle();
+		DrawTriangle();
 
 		// Update window
 		SDL_GL_SwapWindow(window);
