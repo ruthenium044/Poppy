@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(OpEngl)
+project(Poppy)
 
 include(FetchContent)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 
 set(BUILD_SHARED_LIBS OFF)
 set(SDL_SHARED FALSE)
@@ -26,8 +26,12 @@ file(GLOB_RECURSE HEADERS "src/*.h")
 file(GLOB_RECURSE SOURCES_CPP "src/*.cpp")
 file(GLOB_RECURSE SOURCES_C "src/*.c")
 
-add_executable(OpEngl ${SOURCES_CPP} ${SOURCES_C} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES_CPP} ${SOURCES_C} ${HEADERS}  "src/shader.h")
 
-add_dependencies(OpEngl SDL3::SDL3)
+# Absolute path to the engine/dev resources!!
+set(GL_RESOURCE_DIRECTORY_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
+target_compile_definitions(${PROJECT_NAME} PRIVATE "GL_RESOURCE_DIRECTORY_PATH= \"${GL_RESOURCE_DIRECTORY_PATH}\"")
 
-target_link_libraries(OpEngl SDL3::SDL3 opengl32)
+add_dependencies(${PROJECT_NAME} SDL3::SDL3)
+
+target_link_libraries(${PROJECT_NAME} SDL3::SDL3 opengl32)
