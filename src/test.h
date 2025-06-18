@@ -114,6 +114,15 @@ class Listo
         {
             //nope
         }
+
+        if(index == 0)
+        {
+            pushFront(value);
+        }
+        if(index == size)
+        {
+            pushBack(value);
+        }
         //overiterating AGAIIN?!
     }
 
