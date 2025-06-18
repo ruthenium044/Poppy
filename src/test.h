@@ -10,7 +10,7 @@ class Listo
     {
         //idk delete shit
     }
-
+    //[] operator pls
     int get(int index)
     {
         if(size < index)
@@ -18,6 +18,16 @@ class Listo
             //fuck you
         }
         return data[index];
+    }
+
+    int getFront()
+    {
+        return data[0];
+    }
+
+    int getBack()
+    {
+        return data[size];
     }
 
     int getSize()
@@ -34,13 +44,17 @@ class Listo
     {
         //this by user or auto?
         //how to?
+        if(size < index)
+        {
+            //give new size or what capacity or what?
+        }
     }
 
     void set(int value, int index) //actually which order is more clear?
     {
         if(size < index)
         {
-            //nope
+            resize();
         }
         data[index] = value;
     }
@@ -49,16 +63,37 @@ class Listo
     {
         //whats the dif?
         //what params
+        
+    }
+
+    void pushFront(int value)
+    {
+        if(size == capacity)
+        {
+            resize();
+        }
+        //more like dafuq im not iterating over all elements
     }
 
     void pushBack(int value)
     {
         if(size == capacity)
         {
-            //change?
+            resize();
         }
         //increase size?
         data[size++] = value;
+    }
+
+     void popFront()
+    {
+        if(size < 0)
+        {
+            //again i said no lol
+        }
+
+        --size;
+        //yeah not gonna iterate
     }
 
     void popBack()
@@ -79,7 +114,7 @@ class Listo
         {
             //nope
         }
-        //actually no clue
+        //overiterating AGAIIN?!
     }
 
     void print()
@@ -94,7 +129,6 @@ private:
 
     int* data;
 }
-
 
 
 class float3
