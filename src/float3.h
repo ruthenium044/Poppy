@@ -89,3 +89,14 @@ float isParallel(float3 u, float3 v)
     float dot = dot(u, v);
     return dot == 1.0f || dot == -1;
 }
+
+
+matrix4x4 orthographicProjection(float left, float right, float bottom, float top, float near, float far)
+{
+    matrix4x4 mat;
+    mat[0] = {2 / (right - left), 0, 0, -(right + left) / (right - left)};
+    mat[1] = {0, 2 / (top - bottom), 0, -(top + bottom) / (top - bottom)};
+    mat[2] = {0, 0, 1 / (far - near), -(near / (far - near))};
+    mat[3] = {0, 0, 0, 1};
+    return mat;
+}
