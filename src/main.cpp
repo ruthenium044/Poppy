@@ -3,6 +3,7 @@
 #include <iostream>
 #include <filesystem>
 #include "shader.h"
+#include "Listo.h"
 
 static void TriangleShader()
 {
@@ -81,6 +82,21 @@ static void DrawTriangle(Shader shader, unsigned int VAO)
 
 int main()
 {
+	HeapAllocato heapAllocato;
+	{
+		Listo listo(&heapAllocato, 5);
+
+
+	}
+	{
+		Listo listo(&heapAllocato, 5);
+		Listo listo2 = listo;
+		
+	}
+
+	return 0;
+
+
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) == false) 
 	{

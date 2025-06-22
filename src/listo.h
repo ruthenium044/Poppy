@@ -1,124 +1,162 @@
+class Allocato
+{
+public:
+	virtual void* alloc(size_t size) = 0;
+	virtual void free(void* ptr) = 0;
+};
+
+class HeapAllocato : public Allocato
+{
+	virtual void* alloc(size_t size)
+	{
+		return ::operator new(size);
+	}
+
+	virtual void free(void* ptr) final 
+	{
+		return ::operator delete(ptr);
+	}
+};
+
 class Listo
 {
-    Listo(int size)
-    {
-        this.size = size;
-        //what capacity?
-        this.capacity = size + 1; //idk
-    }
-    ~Listo()
-    {
-        //idk delete shit
-    }
-    
-    int get(int index)
-    {
-        if(size < index)
-        {
-            //fuck you
-        }
-        return data[index];
-    }
+	Allocato* allocato = nullptr;
+	int* data = nullptr;
 
-    int& operator[](int index) { return get(index) }
+	size_t size = 0;
+	size_t capacity = 0;
+public:
 
-    int getFront() { return data[0]; }
-    int getBack() { return data[size]; }
-    int getSize() { return size; }
-    bool isEmpty() { return size < 0; }
+	Listo(Allocato* allocato, size_t capacity)
+		: allocato(allocato), capacity(capacity)
+	{
+		if(capacity <= 0)
+		{
+			capacity = 1;
+		}
+		data = (int*)allocato->alloc(capacity * sizeof(int));
+	}
 
-    void resize()
-    {
-        //this by user or auto?
-        //how to?
-        if(size < index)
-        {
-            //give new size or what capacity or what?
-        }
-    }
+	~Listo()
+	{
+		const size_t invalid = (size_t)0xbeefbeefbeefbeef;
+		allocato->free(data);
+		allocato = (Allocato*)invalid;
+		data = (int*)invalid;
+		size = 0;
+		capacity = 0;
+	}
 
-    void set(int value, int index) //actually which order is more clear?
-    {
-        if(size < index)
-        {
-            resize();
-        }
-        data[index] = value;
-    }
+	Listo(const Listo& other)
+		: allocato(other.allocato), capacity(other.capacity), size(other.size)
+	{
+		data = (int*)other.allocato->alloc(other.capacity * sizeof(int));
+		
 
-    void pushFront(int value)
-    {
-        if(size == capacity)
-        {
-            resize();
-        }
-        memmove(1, data + size, size);
-        data[0] = value
-        size++
-    }
+	}
+	
+	int get(int index)
+	{
+		if(size < index)
+		{
+			//fuck you
+		}
+		return data[index];
+	}
 
-    void pushBack(int value)
-    {
-        if(size == capacity)
-        {
-            resize();
-        }
-        //will this increase size?
-        data[size++] = value;
-    }
+	//int& operator[](int index) { return get(index); };
 
-     void popFront()
-    {
-        if(size < 0)
-        {
-            //again i said no lol
-        }
+	//int getFront() { return data[0]; }
+	//int getBack() { return data[size]; }
+	//int getSize() { return size; }
+	//bool isEmpty() { return size < 0; }
 
-        --size;
-        //yeah not gonna iterate
-    }
+	//void resize()
+	//{
+	//	//this by user or auto?
+	//	//how to?
+	//	if(size < index)
+	//	{
+	//		//give new size or what capacity or what?
+	//	}
+	//}
 
-    void popBack()
-    {
-        if(size < 0)
-        {
-            //again i said no lol
-        }
+	//void set(int value, int index) //actually which order is more clear?
+	//{
+	//	if(size < index)
+	//	{
+	//		resize();
+	//	}
+	//	data[index] = value;
+	//}
 
-        --size;
-        //just change size or what?
-        //how to get rid of shit lol
-    }
+	//void pushFront(int value)
+	//{
+	//	if(size == capacity)
+	//	{
+	//		resize();
+	//	}
+	//	memmove(1, data + size, size);
+	//	data[0] = value
+	//	size++
+	//}
 
-    void insert(int value, int index)
-    {
-        if(size < index)
-        {
-            //nope
-        }
-        if(index == 0)
-        {
-            pushFront(value);
-        }
-        if(index == size)
-        {
-            pushBack(value);
-        }
+	//void pushBack(int value)
+	//{
+	//	if(size == capacity)
+	//	{
+	//		resize();
+	//	}
+	//	//will this increase size?
+	//	data[size++] = value;
+	//}
 
-        memmove(data + at + 1, data + at, size - at);
-        data[at] = value
-        size++
-    }
+	// void popFront()
+	//{
+	//	if(size < 0)
+	//	{
+	//		//again i said no lol
+	//	}
 
-    void print()
-    {
-        //todo for debug?
-    }
+	//	--size;
+	//	//yeah not gonna iterate
+	//}
 
-private:
+	//void popBack()
+	//{
+	//	if(size < 0)
+	//	{
+	//		//again i said no lol
+	//	}
 
-    int size = 0;
-    int capacity = 0;
+	//	--size;
+	//	//just change size or what?
+	//	//how to get rid of shit lol
+	//}
 
-    int* data;
-}
+	//void insert(int value, int index)
+	//{
+	//	if(size < index)
+	//	{
+	//		//nope
+	//	}
+	//	if(index == 0)
+	//	{
+	//		pushFront(value);
+	//	}
+	//	if(index == size)
+	//	{
+	//		pushBack(value);
+	//	}
+
+	//	memmove(data + at + 1, data + at, size - at);
+	//	data[at] = value
+	//	size++
+	//}
+
+	void print()
+	{
+		//todo for debug?
+	}
+
+};
