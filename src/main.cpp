@@ -85,8 +85,26 @@ int main()
 	HeapAllocato heapAllocato;
 	{
 		Listo listo(&heapAllocato, 5);
+		listo.pushBack(1);
+		SDL_assert(listo[0] == 1);
+		SDL_assert(listo.getSize() == 1);
+		listo.popBack();
+		SDL_assert(listo.getSize() == 0);
 
+		listo.pushBack(2);
+		listo.pushBack(3);
+		SDL_assert(listo.getSize() == 2);
+		listo.insert(0, 4);
+		SDL_assert(listo[0] == 4);
+		listo.remove(0);
+		SDL_assert(listo[0] == 2);
+		listo.clear();
+		SDL_assert(listo.isEmpty());
 
+		//for (auto element : listo)
+		//{
+		//	SDL_assert(false && "Listo should be empty here");
+		//}
 	}
 	{
 		Listo listo(&heapAllocato, 5);
