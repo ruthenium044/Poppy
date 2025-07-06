@@ -101,15 +101,30 @@ int main()
 		listo.clear();
 		SDL_assert(listo.isEmpty());
 
-		//for (auto element : listo)
-		//{
-		//	SDL_assert(false && "Listo should be empty here");
-		//}
+		for (auto element : listo)
+		{
+			SDL_assert(false && "Listo should be empty here");
+		}
 	}
 	{
 		Listo listo(&heapAllocato, 5);
 		Listo listo2 = listo;
-		
+
+		listo2.pushBack(1);
+		SDL_assert(listo2[0] == 1);
+		SDL_assert(listo2.getSize() == 1);
+		listo2.popBack();
+		SDL_assert(listo2.getSize() == 0);
+
+		listo2.pushBack(2);
+		listo2.pushBack(3);
+		SDL_assert(listo2.getSize() == 2);
+		listo2.insert(0, 4);
+		SDL_assert(listo2[0] == 4);
+		listo2.remove(0);
+		SDL_assert(listo2[0] == 2);
+		listo2.clear();
+		SDL_assert(listo2.isEmpty());
 	}
 
 	return 0;

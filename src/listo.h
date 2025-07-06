@@ -76,11 +76,11 @@ public:
 		capacity = 0;
 	}
 
-	//Listo(const Listo& other) //copy constructor
-	//	: allocato(other.allocato), capacity(other.capacity), size(other.size)
-	//{
-	//	data = (int*)other.allocato->alloc(other.capacity * sizeof(int));
-	//}
+	Listo(const Listo& other) //copy constructor
+		: allocato(other.allocato), size(other.size), capacity(other.capacity)
+	{
+		data = (int*)other.allocato->alloc(other.capacity * sizeof(int));
+	}
 
 	int* get(int index) 
 	{
@@ -94,6 +94,9 @@ public:
 	int getBack() const { return data[size]; }
 	int getSize() const { return size; }
 	bool isEmpty() const { return size == 0; }
+
+	int* begin() { return data; }
+	int* end() { return data + size; }
 
 	void maybeResize(int newSize)
 	{
@@ -114,11 +117,11 @@ public:
 
 	void pushFront(int value)
 	{
-		maybeResize(size + 1);
-		//nexi size
+		size_t nextSize = size + 1;
+		maybeResize(nextSize);
 		memmove(data + 1, data, size * sizeof(*data));
 		data[0] = value;
-		size++;
+		size = nextSize;
 	}
 
 	void pushBack(int value)
@@ -130,17 +133,21 @@ public:
 		size = nextSize;
 	}
 
-	void popFront()
+	int popFront()
 	{
 		SDL_assert(size > 0 && "Listo::popFront called on empty list");
+		int value = data[0];
 		--size;
 		memmove(data, data + 1, size * sizeof(*data));
+		return value;
 	}
 
-	void popBack() //return element!
+	int popBack()
 	{
 		SDL_assert(size > 0 && "Listo::popFront called on empty list");
+		int value = data[size];
 		--size;
+		return value;
 	}
 
 	void remove(int index)
@@ -170,10 +177,9 @@ public:
 
 	void insert(int index, int value)
 	{
-		if (size < index)//asssert
-		{
-			return;
-		}
+		SDL_assert(size > 0 && "Listo::popFront called on empty list");
+		SDL_assert(index < size && "Index out of bounds in Listo::insert");
+
 		if (index == size)
 		{
 			pushBack(value);
@@ -190,9 +196,4 @@ public:
 		}
 
 	}
-		//void print()
-		//{
-		//	//todo for debug?
-		//}
-
 };
