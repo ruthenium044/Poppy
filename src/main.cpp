@@ -3,7 +3,8 @@
 #include <iostream>
 #include <filesystem>
 #include "shader.h"
-#include "Listo.h"
+#define STB_IMAGE_IMPLEMENTATION
+#include "stb_image.h"
 
 static void TriangleShader()
 {
@@ -15,17 +16,21 @@ static void TriangleShader()
 		-0.5f,  0.5f, 0.0f   // top left 
 	};
 
+	//attributes: position, color, texture coords
 	float vertices[] = {
-		// positions         // colors
-		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,  // bottom left
-		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f   // top 
+		// positions          // colors           // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 	};
+
 	unsigned int indices[] =  // note that we start from 0!
 	{ 
 		0, 1, 3,   // first triangle
 		1, 2, 3    // second triangle
 	};
+
 
 	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
 	//GL_STATIC_DRAW : the data is set only once and used many times.
@@ -51,6 +56,7 @@ static void TriangleShader()
 
 	//Set vertex attributes pointers
 
+	// position attribute
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
@@ -58,19 +64,59 @@ static void TriangleShader()
 	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+	// texture coord attribute
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
+
+}
+
+unsigned int loadAndBindImage()
+{
+	unsigned int texture;
+	glGenTextures(1, &texture);
+	glBindTexture(GL_TEXTURE_2D, texture);
+	
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	// load and generate the texture
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png", &width, &height, &nrChannels, 0);
+	if (data)
+	{
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+		glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	else
+	{
+		std::cout << "Failed to load texture" << std::endl;
+	}
+	stbi_image_free(data);
+	return texture;
 }
 
 static void DrawTriangle(Shader shader, unsigned int VAO)
 {
+	auto texture = loadAndBindImage();
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
+
 	//Use shader program when rendering
 	shader.use();
+
+	shader.setInt("texture", 1);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindVertexArray(VAO);
 
-	//glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-	glDrawArrays(GL_TRIANGLES, 0, 3);
+	//glDrawArrays(GL_TRIANGLES, 0, 3);
 
 	//unbinds?
 	//vao unbnd before ebo
@@ -82,7 +128,8 @@ static void DrawTriangle(Shader shader, unsigned int VAO)
 
 int main()
 {
-	HeapAllocato heapAllocato;
+	//LISTO TESTs
+	/*HeapAllocato heapAllocato;
 	{
 		Listo listo(&heapAllocato, 5);
 		listo.pushBack(1);
@@ -126,9 +173,7 @@ int main()
 		listo2.clear();
 		SDL_assert(listo2.isEmpty());
 	}
-
-	return 0;
-
+	*/
 
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) == false) 
