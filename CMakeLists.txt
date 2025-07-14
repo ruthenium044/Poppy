@@ -6,6 +6,25 @@ include(FetchContent)
 
 set(CMAKE_CXX_STANDARD 20)
 
+# SDL settings
+set(SDLIMAGE_AVIF OFF)
+set(SDLIMAGE_BMP OFF)
+set(SDLIMAGE_GIF OFF)
+set(SDLIMAGE_JPG OFF)
+set(SDLIMAGE_JXL OFF)
+set(SDLIMAGE_LBM OFF)
+set(SDLIMAGE_PCX OFF)
+set(SDLIMAGE_PNM OFF)
+set(SDLIMAGE_QOI OFF)
+set(SDLIMAGE_SVG OFF)
+set(SDLIMAGE_TGA OFF)
+set(SDLIMAGE_TIF OFF)
+set(SDLIMAGE_WEBP OFF)
+set(SDLIMAGE_XCF OFF)
+set(SDLIMAGE_XPM OFF)
+set(SDLIMAGE_XV OFF)
+set(SDLIMAGE_PNG ON)
+
 set(BUILD_SHARED_LIBS OFF)
 set(SDL_SHARED FALSE)
 set(SDL_STATIC TRUE)
@@ -18,7 +37,16 @@ FetchContent_Declare(
     GIT_PROGRESS TRUE
 )
 
-FetchContent_MakeAvailable(SDL)
+# Fetch SDL3_image
+FetchContent_Declare(
+    SDL_image
+    GIT_REPOSITORY https://github.com/libsdl-org/SDL_image.git
+    GIT_TAG prerelease-3.1.1
+    GIT_PROGRESS TRUE
+    GIT_SHALLOW TRUE
+)
+
+FetchContent_MakeAvailable(SDL SDL_image)
 
 include_directories(${PROJECT_NAME} include)
 
@@ -32,6 +60,6 @@ add_executable(${PROJECT_NAME} ${SOURCES_CPP} ${SOURCES_C} ${HEADERS}  "src/shad
 set(GL_RESOURCE_DIRECTORY_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
 target_compile_definitions(${PROJECT_NAME} PRIVATE "GL_RESOURCE_DIRECTORY_PATH= \"${GL_RESOURCE_DIRECTORY_PATH}\"")
 
-add_dependencies(${PROJECT_NAME} SDL3::SDL3)
+add_dependencies(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image)
 
-target_link_libraries(${PROJECT_NAME} SDL3::SDL3 opengl32)
+target_link_libraries(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image opengl32)

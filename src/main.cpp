@@ -1,21 +1,12 @@
 #include <SDL3/SDL.h>
+#include <SDL3_image/SDL_image.h>
 #include <glad/glad.h>
 #include <iostream>
 #include <filesystem>
 #include "shader.h"
-#define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
 
 static void TriangleShader()
 {
-	float verticesIndices[] = 
-	{
-		 0.5f,  0.5f, 0.0f,  // top right
-		 0.5f, -0.5f, 0.0f,  // bottom right
-		-0.5f, -0.5f, 0.0f,  // bottom left
-		-0.5f,  0.5f, 0.0f   // top left 
-	};
-
 	//attributes: position, color, texture coords
 	float vertices[] = {
 		// positions          // colors           // texture coords
@@ -26,85 +17,85 @@ static void TriangleShader()
 	};
 
 	unsigned int indices[] =  // note that we start from 0!
-	{ 
+	{
 		0, 1, 3,   // first triangle
 		1, 2, 3    // second triangle
 	};
-
 
 	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
 	//GL_STATIC_DRAW : the data is set only once and used many times.
 	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
 
 	//VAO
-	//unsigned int VAO;
-	//glGenVertexArrays(1, &VAO);
-	//glBindVertexArray(VAO);
-	// 
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
 	//VBO
 	unsigned int VBO;
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-
 	//EBO
 	unsigned int EBO;
-	//glGenBuffers(1, &EBO);
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	//glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
 
 	//Set vertex attributes pointers
 
 	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
 	glEnableVertexAttribArray(0);
 
 	// color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
 	// texture coord attribute
 	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
 	glEnableVertexAttribArray(2);
-
 }
 
-unsigned int loadAndBindImage()
+unsigned int loadImage(const char* path)
 {
+	SDL_Surface* surface = IMG_Load(path);
+	if (!surface)
+	{
+		std::cerr << "Failed to load image: " << std::endl;
+		return 0;
+	}
+
+	SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
+
 	unsigned int texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
-	
 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	// load and generate the texture
-	int width, height, nrChannels;
-	unsigned char* data = stbi_load(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png", &width, &height, &nrChannels, 0);
-	if (data)
-	{
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	else
-	{
-		std::cout << "Failed to load texture" << std::endl;
-	}
-	stbi_image_free(data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	SDL_DestroySurface(surface);
+
 	return texture;
 }
 
-static void DrawTriangle(Shader shader, unsigned int VAO)
+void bindImage(unsigned int texture)
 {
-	auto texture = loadAndBindImage();
-
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
+}
+
+static void DrawTriangle(Shader shader, unsigned int VAO, unsigned int texture)
+{
+	bindImage(texture);
 
 	//Use shader program when rendering
 	shader.use();
@@ -112,7 +103,7 @@ static void DrawTriangle(Shader shader, unsigned int VAO)
 	shader.setInt("texture", 1);
 
 	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(VAO);
+	//glBindVertexArray(VAO); <- doesnt wokr???
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -176,7 +167,7 @@ int main()
 	*/
 
 	// Initialize SDL
-	if (SDL_Init(SDL_INIT_VIDEO) == false) 
+	if (SDL_Init(SDL_INIT_VIDEO) == false)
 	{
 		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return -1;
@@ -240,7 +231,9 @@ int main()
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 	TriangleShader();
-	
+
+	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
+
 	while (!quit)
 	{
 		while (SDL_PollEvent(&e) != 0)
@@ -264,7 +257,7 @@ int main()
 			}
 		}
 
-		if(wirefame)
+		if (wirefame)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
@@ -273,7 +266,7 @@ int main()
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		DrawTriangle(triangleShader, VAO);
+		DrawTriangle(triangleShader, VAO, texutre);
 
 		// Update window
 		SDL_GL_SwapWindow(window);
