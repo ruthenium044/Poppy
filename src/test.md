@@ -101,38 +101,42 @@ Flight at 18:00
 
 ## Fun stuff
 
-Aqua park
-
-Siam Park 10:00 - 17:00 
+### Siam Park 10:00 - 17:00 
 
 Recommended 4-6 hours 42 eur
 
-Lago Martiánez 10:00 - 18:00 
+### Lago Martiánez 10:00 - 18:00 
 
 About 1 1-hour drive, could be combined with a visit to the north
 
 Recommended 2-3 hours 6 eur
 
-Loro Parque Zoo
+### Loro Parque Zoo
 
 9:30 - 17:30 (last entry around midday) 
 
 Half a day, drive to the north 30 eur per person
 
-Optional whale-watching tour (~€30–35/person)
+### Optional whale-watching tour (~€30–35/person)
 
 ## Snorkels
 
-Drive to Los Gigantes, snorkel at Playa de Alcalá
+### Drive to Los Gigantes, snorkel at Playa de Alcalá
 Visit Charco del Tancón
+
+### Playa de la Arena (near Los Gigantes) Black sand beach with rocky reef sides
+
+Good variety of reef fish, Good from the beach or rocks
+
+Go when the sea is calm – swell can affect visibility
 
 ## Optional dives: 
 
-Go on a wreck dive at El Condesito (max depth ~20 m)
+### Go on a wreck dive at El Condesito (max depth ~20 m)
 Easy, beautiful wreck dive with rich marine life
 
-Fun Dive: Dive at Montaña Amarilla or Palm-Mar Wall — rich volcanic reef and swim-throughs
+### Dive at Montaña Amarilla or Palm-Mar Wall — rich volcanic reef and swim-throughs
 Or: Hike to Playa Diego Hernández, a quiet beach with turquoise waters
 
-Optional dive	Palm-Mar or Amarilla	Scenic reef, rays & lava arches
+### Optional dive	Palm-Mar or Amarilla	Scenic reef, rays & lava arches
 
