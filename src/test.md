@@ -18,6 +18,8 @@ Breakfast	07:30 – 10:30
 
 Morning snorkel in Playa del Duque (walkable) or El Puertito (short drive, turtle chance!)
 
+Maybe drive somewhere or do more snorkelling
+
 # Day 3
 
 PADI 08:30 - 14:30
@@ -37,8 +39,15 @@ Celebrate with sunset at Kaluna Beach Club or dinner at Cozy Cafe
 # Day 6 volcano 
 
 Scenic drive to Teide National Park
-Stop at viewpoints: Roques de García, Lava fields, Teleférico (Cable car)
+
+Stop at viewpoints: Roques de García, Lava fields, Mirador de La Ruleta, Mirador del Tabonal Negro, Teleférico (Cable car)
+
 Optional short hike (~1–2 hrs)
+
+With a cable car ride: Add ~1.5–2 hours more. Takes you to 3,555 m (not the summit)
+
+Tickets: ~€39 per adult (book in advance!) May close due to wind/weather
+
 Picnic lunch or dine at Parador de Las Cañadas
 
 # Day 7
@@ -51,7 +60,9 @@ Afternoon: Relax or light shopping in Costa Adeje
 # Day 8
 
 Drive east to Abades Bay
+
 Calm, clear snorkelling over lava reef; great for turtles, rays, trumpetfish
+
 Lunch in Los Abrigos fishing village
 
 # Day 9
@@ -93,9 +104,20 @@ Flight at 18:00
 Aqua park
 
 Siam Park 10:00 - 17:00 
-42 eur
+
+Recommended 4-6 hours 42 eur
+
 Lago Martiánez 10:00 - 18:00 
-6 eur
+
+About 1 1-hour drive, could be combined with a visit to the north
+
+Recommended 2-3 hours 6 eur
+
+Loro Parque Zoo
+
+9:30 - 17:30 (last entry around midday) 
+
+Half a day, drive to the north 30 eur per person
 
 Optional whale-watching tour (~€30–35/person)
 
