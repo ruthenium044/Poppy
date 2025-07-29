@@ -4,8 +4,102 @@
 #include <iostream>
 #include <filesystem>
 #include "shader.h"
+#include "float3.h"
 
-static void TriangleShader()
+struct ConstantTexture
+{
+	GLuint value;
+};
+
+struct ConstantTextureLookupItem
+{
+	const char* key;
+	ConstantTexture texture;
+};
+
+struct ConstantTextureLookup
+{
+	ConstantTextureLookupItem* items;
+	size_t capacity;
+};
+
+static unsigned long long ConstantTextureLookupHash(const char* str)
+{
+	unsigned long long hash = 5381;
+	while (*str)
+	{
+		char c = *str++;
+		hash = ((hash << 5) + hash) + (unsigned char)c;
+	}
+
+	return hash;
+}
+
+ConstantTextureLookup ConstantTextureLookupCreate(size_t capacity)
+{
+	ConstantTextureLookup lookup;
+	lookup.items = (ConstantTextureLookupItem*)malloc(sizeof(*lookup.items) * capacity);
+	lookup.capacity = capacity;
+	memset(lookup.items, 0, sizeof(*lookup.items) * capacity);
+	return lookup;
+}
+
+void ConstantTextureLookupAdd(ConstantTextureLookup* lookup, const char* key, ConstantTexture* texture)
+{
+	unsigned long long slot = ConstantTextureLookupHash(key) % lookup->capacity;
+	for (size_t index = 0; index < lookup->capacity; index++)
+	{
+		size_t at = (slot + index) % lookup->capacity;
+		ConstantTextureLookupItem* item = &lookup->items[at];
+		if (item->key == nullptr)
+		{
+			item->key = key;
+			item->texture.value = texture->value;
+			return;
+		}
+		int result = strcmp(item->key, key);
+		if (result == 0)
+		{
+			return;
+		}
+		// Collision, result != 0 -> different key stored already, continue
+	}
+}
+
+ConstantTexture* ConstantTextureLookupGet(ConstantTextureLookup* lookup, const char* key)
+{
+	unsigned long long slot = ConstantTextureLookupHash(key) % lookup->capacity;
+	for (size_t index = 0; index < lookup->capacity; index++)
+	{
+		size_t at = (slot + index) % lookup->capacity;
+		ConstantTextureLookupItem* item = &lookup->items[at];
+		if (item->key == nullptr)
+		{
+			return nullptr;
+		}
+		int result = strcmp(item->key, key);
+		if (result == 0)
+		{
+			return &item->texture;
+		}
+	}
+	// Increase load factor pls
+	return nullptr;
+}
+
+ConstantTextureLookup textureLookup = ConstantTextureLookupCreate(128);
+
+void GlobalTextureAdd(const char* key, ConstantTexture* texture)
+{
+	ConstantTextureLookupAdd(&textureLookup, key, texture);
+}
+
+ConstantTexture* GlobalTextureGet(const char* key)
+{
+	return ConstantTextureLookupGet(&textureLookup, key);
+}
+
+static void GetSimple2dShader()
 {
 	//attributes: position, color, texture coords
 	float vertices[] = {
@@ -15,7 +109,7 @@ static void TriangleShader()
 		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
 		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
 	};
-
+	
 	unsigned int indices[] =  // note that we start from 0!
 	{
 		0, 1, 3,   // first triangle
@@ -69,7 +163,7 @@ unsigned int loadImage(const char* path)
 
 	SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
 
-	unsigned int texture;
+	GLuint texture;
 	glGenTextures(1, &texture);
 	glBindTexture(GL_TEXTURE_2D, texture);
 
@@ -84,26 +178,35 @@ unsigned int loadImage(const char* path)
 
 	SDL_DestroySurface(surface);
 
+	ConstantTexture constantTexture;
+	constantTexture.value = texture;
+	GlobalTextureAdd(path, &constantTexture);
+
 	return texture;
 }
 
-void bindImage(unsigned int texture)
+void bindTexture(unsigned int texture)
 {
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-static void DrawTriangle(Shader shader, unsigned int VAO, unsigned int texture)
+void bindTexture(const char* key)
 {
-	bindImage(texture);
+	ConstantTexture* texture = GlobalTextureGet(key);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture->value);
+}
+
+static void DrawSprite(Shader shader, unsigned int texture)
+{
+	bindTexture(texture);
 
 	//Use shader program when rendering
 	shader.use();
 
 	shader.setInt("texture", 1);
-
-	//glBindBuffer(GL_ARRAY_BUFFER, 0);
-	//glBindVertexArray(VAO); <- doesnt wokr???
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
@@ -225,14 +328,17 @@ int main()
 	SDL_assert(fExists && "Shader file does not exist");
 
 	Shader triangleShader(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
-	//todo move this lol
-	//VAO
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-	TriangleShader();
+
+	GetSimple2dShader();
 
 	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
+
+
+	//struct texture_user_blob
+	//{
+	//	unsigned int texture;
+	//	..
+	//};
 
 	while (!quit)
 	{
@@ -266,7 +372,7 @@ int main()
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		DrawTriangle(triangleShader, VAO, texutre);
+		DrawSprite(triangleShader, texutre);
 
 		// Update window
 		SDL_GL_SwapWindow(window);
