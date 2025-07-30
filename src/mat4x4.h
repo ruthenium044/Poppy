@@ -55,6 +55,16 @@ vec4 operator*( mat4x4 mat, float4 vec )
 	return result
 }
 
+mat4x4 operator*( mat4x4 matA, mat4x4 matB )
+{
+	mat4x4 result = mat4x4(0.0f);
+	for (int i = 0; i < 4; ++i) 
+	{
+        	result[i] = matA * matB[i];
+    	}
+	return result
+}
+
 mat4x4 translate(mat4x4 mat, float3 vec)
 {
 	//mat4x4 translation = mat4x4(
