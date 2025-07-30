@@ -44,6 +44,7 @@ mat4x4 operator+(const float4& vec)
 
 }
 
+//not commutative
 mat4x4 operator*( mat4x4 mat, float4 vec )
 {
 	
@@ -51,7 +52,35 @@ mat4x4 operator*( mat4x4 mat, float4 vec )
 
 mat4x4 translate(mat4x4 mat, float3 vec)
 {
-	return mat + vec;
+	//mat4x4 translation = mat4x4(
+   	// 1.0, 0.0, 0.0, vec.x,
+   	// 0.0, 1.0, 0.0, vec.y,
+   	// 0.0, 0.0, 1.0, vec.z,
+   	// 0.0, 0.0, 0.0, 1.0);
+	//return translation * mat;
+
+	//which is same as:
+	
+	mat.m03 += vec.x;
+	mat.m13 += vec.y;
+	mat.m23 += vec.z;
+	return mat;
+}
+
+mat4x4 scale(mat4x4 mat, float3 vec)
+{
+	//mat4x4 scale = mat4x4(
+   	// vec.x, 0.0, 0.0, 0.0,
+   	// 0.0, vec.y, 0.0, 0.0,
+   	// 0.0, 0.0, vec.z, 0.0,
+   	// 0.0, 0.0, 0.0, 1.0);
+	//return scale * mat;
+
+	//which is same as:
+	mat.m00 *= vec.x;
+	mat.m11 *= vec.y;
+	mat.m22 *= vec.z;
+	return mat;
 }
 
 //
