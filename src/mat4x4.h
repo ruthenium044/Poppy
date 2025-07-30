@@ -45,9 +45,14 @@ mat4x4 operator+(const float4& vec)
 }
 
 //not commutative
-mat4x4 operator*( mat4x4 mat, float4 vec )
+vec4 operator*( mat4x4 mat, float4 vec )
 {
-	
+	vec4 result = {
+	mat.m00 * vec.x + mat.m01 * vec.y + mat.m02 * vec.z + mat.m03 * vec.w,
+	mat.m10 * vec.x + mat.m11 * vec.y + mat.m12 * vec.z + mat.m13 * vec.w,
+	mat.m20 * vec.x + mat.m21 * vec.y + mat.m22 * vec.z + mat.m23 * vec.w,
+	mat.m30 * vec.x + mat.m31 * vec.y + mat.m32 * vec.z + mat.m33 * vec.w };
+	return result
 }
 
 mat4x4 translate(mat4x4 mat, float3 vec)
