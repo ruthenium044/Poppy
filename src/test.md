@@ -121,6 +121,8 @@ Half a day, drive to the north 30 eur per person
 
 ## Snorkels
 
+Playa Amarilla
+
 ### Drive to Los Gigantes, snorkel at Playa de Alcalá
 Visit Charco del Tancón
 
@@ -139,4 +141,6 @@ Easy, beautiful wreck dive with rich marine life
 Or: Hike to Playa Diego Hernández, a quiet beach with turquoise waters
 
 ### Optional dive	Palm-Mar or Amarilla	Scenic reef, rays & lava arches
+
+Buffadero
 
