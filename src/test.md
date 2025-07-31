@@ -18,6 +18,9 @@ Breakfast	07:30 – 10:30
 
 Morning snorkel in Playa del Duque (walkable) or El Puertito (short drive, turtle chance!)
 
+More snorkel or trip?
+
+# Day 3
 
 Scenic drive to Teide National Park
 
@@ -31,23 +34,21 @@ Tickets: ~€39 per adult (book in advance!) May close due to wind/weather
 
 Picnic lunch or dine at Parador de Las Cañadas
 
-# Day 3
+# Day 4
 
 PADI 08:30 - 14:30
 
 Shore snoreling Las Vistas or Playa del Camisón, Playa Paraiso
 
-# Day 4
+# Day 5
 
 PADI 08:30 - 14:30
 
-# Day 5 
+# Day 6
 
 Finish PADI 08:30 - 14:30
 
 Celebrate with sunset at Kaluna Beach Club or dinner at Cozy Cafe
-
-# Day 6 
 
 # Day 7
 
@@ -72,15 +73,15 @@ Do an optional dive or snorkelling tour
 
 Do the last optional dive
 
-# Day 11
-
-Aqua park?
-
 Day trip to the northeast:
 Explore Anaga Rural Park (Laurisilva forest, viewpoints)
 Visit Playa de Benijo or Playa del Roque (wild, beautiful beaches)
 
 Afternoon: Beach nap at Playa Abama or stop at Cueva del Viento (if you're feeling active)
+
+# Day 11
+
+Snorkeling or aqua park?
 
 # Day 12 
 
