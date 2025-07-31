@@ -18,7 +18,18 @@ Breakfast	07:30 – 10:30
 
 Morning snorkel in Playa del Duque (walkable) or El Puertito (short drive, turtle chance!)
 
-Maybe drive somewhere or do more snorkelling
+
+Scenic drive to Teide National Park
+
+Stop at viewpoints: Roques de García, Lava fields, Mirador de La Ruleta, Mirador del Tabonal Negro, Teleférico (Cable car)
+
+Optional short hike (~1–2 hrs)
+
+With a cable car ride: Add ~1.5–2 hours more. Takes you to 3,555 m (not the summit)
+
+Tickets: ~€39 per adult (book in advance!) May close due to wind/weather
+
+Picnic lunch or dine at Parador de Las Cañadas
 
 # Day 3
 
@@ -36,19 +47,7 @@ Finish PADI 08:30 - 14:30
 
 Celebrate with sunset at Kaluna Beach Club or dinner at Cozy Cafe
 
-# Day 6 volcano 
-
-Scenic drive to Teide National Park
-
-Stop at viewpoints: Roques de García, Lava fields, Mirador de La Ruleta, Mirador del Tabonal Negro, Teleférico (Cable car)
-
-Optional short hike (~1–2 hrs)
-
-With a cable car ride: Add ~1.5–2 hours more. Takes you to 3,555 m (not the summit)
-
-Tickets: ~€39 per adult (book in advance!) May close due to wind/weather
-
-Picnic lunch or dine at Parador de Las Cañadas
+# Day 6 
 
 # Day 7
 
@@ -71,6 +70,10 @@ Do an optional dive or snorkelling tour
 
 # Day 10
 
+Do the last optional dive
+
+# Day 11
+
 Aqua park?
 
 Day trip to the northeast:
@@ -78,10 +81,6 @@ Explore Anaga Rural Park (Laurisilva forest, viewpoints)
 Visit Playa de Benijo or Playa del Roque (wild, beautiful beaches)
 
 Afternoon: Beach nap at Playa Abama or stop at Cueva del Viento (if you're feeling active)
-
-# Day 11
-
-Do the last optional dive
 
 # Day 12 
 
