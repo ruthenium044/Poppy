@@ -65,7 +65,7 @@ mat4x4 operator*( mat4x4 matA, mat4x4 matB )
 	return result
 }
 
-mat4x4 translate(mat4x4 mat, float3 vec)
+mat4x4 translate(mat4x4 mat, float3 vec) //maybe nope
 {
 	//mat4x4 translation = mat4x4(
    	// 1.0, 0.0, 0.0, vec.x,
@@ -75,14 +75,15 @@ mat4x4 translate(mat4x4 mat, float3 vec)
 	//return translation * mat;
 
 	//which is same as:
-	
-	mat.m03 += vec.x;
-	mat.m13 += vec.y;
-	mat.m23 += vec.z;
-	return mat;
+
+	mat4x4 result = mat4x4(1.0f);
+	result.m03 = mat.m03 + vec.x;
+	result.m13 = mat.m13 + vec.y;
+	result.m23 = mat.m23 + vec.z;
+	return result;
 }
 
-mat4x4 scale(mat4x4 mat, float3 vec)
+mat4x4 scale(mat4x4 mat, float3 vec) //nope
 {
 	//mat4x4 scale = mat4x4(
    	// vec.x, 0.0, 0.0, 0.0,
@@ -98,7 +99,33 @@ mat4x4 scale(mat4x4 mat, float3 vec)
 	return mat;
 }
 
-//
+mat4x4 rotationX(mat4x4 mat, float3 vec, float angle) //nope
+{
+	//mat4x4 rot = mat4x4(
+   	// 1.0, 0.0, 0.0, 0.0,
+   	// 0.0, cos(angle), -sin(angle), 0.0,
+   	// 0.0, sin(angle),  cos(angle), 0.0,
+   	// 0.0, 0.0, 0.0, 1.0);
+	//return rot * mat;
+
+	mat4x4 result = mat4x4(1.0f);
+	result.m00 = mat.m0 * vec.x;
+	result.m11 = mat.m11 * (cos(angle) * vec.y - sin(angle) * vec.z);
+	result.m22 = mat.m22 * (sin(angle) * vec.y + cos(angle) * vec.z);
+	
+	return mat;
+}
+
+mat4x4 rotationY(mat4x4 mat, float3 vec, float angle) //nope
+{
+	mat4x4 result = mat4x4(1.0f);
+	result.m00 = mat.m0 * cos(angle) * vec.x + sin(angle) * vec.z;
+	result.m11 = mat.m11 * vec.y;
+	result.m22 = mat.m22 * (sin(angle) * vec.y + cos(angle) * vec.z);
+	return mat;
+}
+
+
 //mat4x4 orthographicProjection(float left, float right, float bottom, float top, float near, float far)
 //{
 //    matrix4x4 mat;
