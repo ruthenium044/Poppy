@@ -83,6 +83,31 @@ mat4x4 translate(mat4x4 mat, float3 vec) //maybe nope
 	return result;
 }
 
+vec3 translate(vec3 vec, float3 translate) //maybe nope
+{
+	//mat4x4 translation = mat4x4(
+   	// 1.0, 0.0, 0.0, vec.x,
+   	// 0.0, 1.0, 0.0, vec.y,
+   	// 0.0, 0.0, 1.0, vec.z,
+   	// 0.0, 0.0, 0.0, 1.0);
+	//return translation * mat;
+
+	//which is same as:
+
+	mat4x4 result = mat4x4(1.0f);
+	vec.x += vec.x;
+	result.m13 = mat.m13 + vec.y;
+	result.m23 = mat.m23 + vec.z;
+	return result;
+}
+
+
+   	// scale.x, 0.0, 0.0, pos.x,
+   	// 0.0, scale.y, 0.0, pos.y,
+   	// 0.0, 0.0, scale.z, pos.z,
+   	// 0.0, 0.0, 0.0, 1.0);
+	
+
 mat4x4 scale(mat4x4 mat, float3 vec) //nope
 {
 	//mat4x4 scale = mat4x4(
