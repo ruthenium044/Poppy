@@ -79,7 +79,7 @@ float isPerpendicular(float3 u, float3 v)
 
 float isParallel(float3 u, float3 v)
 {
-    float dot = dot(u, v);
+    float dot = 0.0f;//dot(u, v);
     return dot == 1.0f || dot == -1;
 }
 

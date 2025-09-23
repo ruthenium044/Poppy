@@ -5,6 +5,8 @@
 #include <filesystem>
 #include "shader.h"
 #include "float3.h"
+#include "float4.h"
+#include "mat4x4.h"
 
 struct ConstantTexture
 {
@@ -222,6 +224,13 @@ static void DrawSprite(Shader shader, unsigned int texture)
 
 int main()
 {
+	//math lib test
+	//float4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+	//mat4x4 trans = mat4x4(1.0f);
+	//trans = translate(trans, float3(1.0f, 1.0f, 0.0f));
+	//vec = trans * vec;
+	//std::cout << vec.x << vec.y << vec.z << std::endl;
+
 	//LISTO TESTs
 	/*HeapAllocato heapAllocato;
 	{
