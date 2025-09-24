@@ -83,3 +83,8 @@ float isParallel(float3 u, float3 v)
     return dot == 1.0f || dot == -1;
 }
 
+void print( float3 vec )
+{
+    std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
+}
+

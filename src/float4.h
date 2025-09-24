@@ -62,3 +62,8 @@ struct float4
 
     //rot and angles
 };
+
+void print(float4 vec)
+{
+    std::cout << vec.x << " " << vec.y << " " << vec.z << " " << vec.w << std::endl;
+}

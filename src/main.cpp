@@ -225,11 +225,11 @@ static void DrawSprite(Shader shader, unsigned int texture)
 int main()
 {
 	//math lib test
-	//float4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-	//mat4x4 trans = mat4x4(1.0f);
-	//trans = translate(trans, float3(1.0f, 1.0f, 0.0f));
-	//vec = trans * vec;
-	//std::cout << vec.x << vec.y << vec.z << std::endl;
+	float4 vec(1.0f, 0.0f, 0.0f, 1.0f);
+	mat4x4 trans = mat4x4(1.0f);
+	trans = translate(trans, float3(1.0f, 1.0f, 0.0f));
+	vec = trans * vec;
+	print(vec);
 
 	//LISTO TESTs
 	/*HeapAllocato heapAllocato;
