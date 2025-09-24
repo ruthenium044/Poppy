@@ -210,6 +210,15 @@ static void DrawSprite(Shader shader, unsigned int texture)
 
 	shader.setInt("texture", 1);
 
+	mat4x4 trans = mat4x4(1.0f);
+	//trans = translate(trans, float3(1.0f, 0.0f, 0.0f));
+	//trans = scale(trans, float3(0.5, 0.5, 0.5));
+	//trans = rotationZ(trans, 0.5);
+	//print(trans);
+
+	unsigned int transformLoc = glGetUniformLocation(shader.ID, "transform");
+	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, trans.elements);
+
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -224,13 +233,6 @@ static void DrawSprite(Shader shader, unsigned int texture)
 
 int main()
 {
-	//math lib test
-	float4 vec(1.0f, 0.0f, 0.0f, 1.0f);
-	mat4x4 trans = mat4x4(1.0f);
-	trans = translate(trans, float3(1.0f, 1.0f, 0.0f));
-	vec = trans * vec;
-	print(vec);
-
 	//LISTO TESTs
 	/*HeapAllocato heapAllocato;
 	{

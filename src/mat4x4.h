@@ -68,21 +68,12 @@ float4 operator*(mat4x4 mat, float4 vec)
 //	return result;
 //}
 
-mat4x4 translate(mat4x4 mat, float3 vec) //maybe nope
+mat4x4 translate(mat4x4 mat, float3 vec)
 {
-	//mat4x4 translation = mat4x4(
-   	// 1.0, 0.0, 0.0, vec.x,
-   	// 0.0, 1.0, 0.0, vec.y,
-   	// 0.0, 0.0, 1.0, vec.z,
-   	// 0.0, 0.0, 0.0, 1.0);
-	//return translation * mat;
-
-	//which is same as:
-
 	mat4x4 result = mat4x4(1.0f);
-	result.m03 = mat.m03 + vec.x;
-	result.m13 = mat.m13 + vec.y;
-	result.m23 = mat.m23 + vec.z;
+	result.m30 = mat.m30 + vec.x;
+	result.m31 = mat.m31 + vec.y;
+	result.m32 = mat.m32 + vec.z;
 	return result;
 }
 
@@ -106,55 +97,76 @@ mat4x4 translate(mat4x4 mat, float3 vec) //maybe nope
 //	return result;
 //}
 
-
-   	// scale.x, 0.0, 0.0, pos.x,
-   	// 0.0, scale.y, 0.0, pos.y,
-   	// 0.0, 0.0, scale.z, pos.z,
-   	// 0.0, 0.0, 0.0, 1.0);
-	
-
-mat4x4 scale(mat4x4 mat, float3 vec) //nope
+mat4x4 scale(mat4x4 mat, float3 vec)
 {
-	//mat4x4 scale = mat4x4(
-   	// vec.x, 0.0, 0.0, 0.0,
-   	// 0.0, vec.y, 0.0, 0.0,
-   	// 0.0, 0.0, vec.z, 0.0,
-   	// 0.0, 0.0, 0.0, 1.0);
-	//return scale * mat;
-
-	//which is same as:
 	mat.m00 *= vec.x;
 	mat.m11 *= vec.y;
 	mat.m22 *= vec.z;
 	return mat;
 }
 
-mat4x4 rotationX(mat4x4 mat, float3 vec, float angle) //nope
+mat4x4 rotationX(mat4x4 mat, float angle)
 {
-	//mat4x4 rot = mat4x4(
-   	// 1.0, 0.0, 0.0, 0.0,
-   	// 0.0, cos(angle), -sin(angle), 0.0,
-   	// 0.0, sin(angle),  cos(angle), 0.0,
-   	// 0.0, 0.0, 0.0, 1.0);
-	//return rot * mat;
+	float sinAngle = sin(angle);
+	float cosAngle = cos(angle);
 
-	mat4x4 result = mat4x4(1.0f);
-	result.m00 = mat.m00 * vec.x;
-	result.m11 = mat.m11 * (cos(angle) * vec.y - sin(angle) * vec.z);
-	result.m22 = mat.m22 * (sin(angle) * vec.y + cos(angle) * vec.z);
+	float m01 = mat.m01, m11 = mat.m11, m21 = mat.m21, m31 = mat.m31;
+	float m02 = mat.m02, m12 = mat.m12, m22 = mat.m22, m32 = mat.m32;
+
+	mat.m01 = m01 * cosAngle + m02 * sinAngle;
+	mat.m11 = m11 * cosAngle + m12 * sinAngle;
+	mat.m21 = m21 * cosAngle + m22 * sinAngle;
+	mat.m31 = m31 * cosAngle + m32 * sinAngle;
+
+	mat.m02 = - m01 * sinAngle + m02 * cosAngle;
+	mat.m12 = - m11 * sinAngle + m12 * cosAngle;
+	mat.m22 = - m21 * sinAngle + m22 * cosAngle;
+	mat.m32 = - m31 * sinAngle + m32 * cosAngle;
 	
 	return mat;
 }
 
-mat4x4 rotationY(mat4x4 mat, float3 vec, float angle) //nope
+mat4x4 rotationY(mat4x4 mat, float angle)
 {
-	mat4x4 result = mat4x4(1.0f);
-	result.m00 = mat.m00 * cos(angle) * vec.x + sin(angle) * vec.z;
-	result.m11 = mat.m11 * vec.y;
-	result.m22 = mat.m22 * (sin(angle) * vec.y + cos(angle) * vec.z);
+	float sinAngle = sin(angle);
+	float cosAngle = cos(angle);
+
+	float m00 = mat.m00, m10 = mat.m10, m20 = mat.m20, m30 = mat.m30;
+	float m02 = mat.m02, m12 = mat.m12, m22 = mat.m22, m32 = mat.m32;
+
+	mat.m00 = m00 * cosAngle + m02 * sinAngle;
+	mat.m10 = m10 * cosAngle + m12 * sinAngle;
+	mat.m20 = m20 * cosAngle + m22 * sinAngle;
+	mat.m30 = m30 * cosAngle + m32 * sinAngle;
+
+	mat.m02 = -m00 * sinAngle + m02 * cosAngle;
+	mat.m12 = -m10 * sinAngle + m12 * cosAngle;
+	mat.m22 = -m20 * sinAngle + m22 * cosAngle;
+	mat.m32 = -m30 * sinAngle + m32 * cosAngle;
+
 	return mat;
 }
 
+mat4x4 rotationZ(mat4x4 mat, float angle)
+{
+	float sinAngle = sin(angle);
+	float cosAngle = cos(angle);
+
+	float m00 = mat.m00, m10 = mat.m10, m20 = mat.m20, m30 = mat.m30;
+	float m01 = mat.m01, m11 = mat.m11, m21 = mat.m21, m31 = mat.m31;
+
+	mat.m00 = m00 * cosAngle + m01 * sinAngle;
+	mat.m10 = m10 * cosAngle + m11 * sinAngle;
+	mat.m20 = m20 * cosAngle + m21 * sinAngle;
+	mat.m30 = m30 * cosAngle + m31 * sinAngle;
+
+	mat.m01 = -m00 * sinAngle + m01 * cosAngle;
+	mat.m11 = -m10 * sinAngle + m11 * cosAngle;
+	mat.m21 = -m20 * sinAngle + m21 * cosAngle;
+	mat.m31 = -m30 * sinAngle + m31 * cosAngle;
+
+	return mat;
+}
 
 //mat4x4 orthographicProjection(float left, float right, float bottom, float top, float near, float far)
 //{
@@ -165,3 +177,11 @@ mat4x4 rotationY(mat4x4 mat, float3 vec, float angle) //nope
 //    mat[3] = {0, 0, 0, 1};
 //    return mat;
 //}
+
+void print(mat4x4 mat)
+{
+	std::cout << mat.m00 << " " << mat.m01 << " " << mat.m02 << " " << mat.m03 << std::endl;
+	std::cout << mat.m10 << " " << mat.m11 << " " << mat.m12 << " " << mat.m13 << std::endl;
+	std::cout << mat.m20 << " " << mat.m21 << " " << mat.m22 << " " << mat.m23 << std::endl;
+	std::cout << mat.m30 << " " << mat.m31 << " " << mat.m32 << " " << mat.m33 << std::endl;
+}
