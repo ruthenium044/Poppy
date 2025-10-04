@@ -43,7 +43,7 @@ static void compileShader(unsigned int shader, const char* shaderSource)
 	}
 }
 
-unsigned int createAndLinkProgram(unsigned int shaders[], int count)
+unsigned int createProgram(unsigned int shaders[], int count)
 {
 	unsigned int shaderProgram = glCreateProgram();
 
@@ -72,18 +72,57 @@ unsigned int createAndLinkProgram(unsigned int shaders[], int count)
 	return shaderProgram;
 }
 
+enum class MaterialEditorShaderType
+{
+	Vertex,
+	Fragment
+};
+
+enum class MaterialEditorShaderArgumentType
+{
+	Bool,
+	Int,
+	Float,
+	Texture
+};
+
+struct MaterialEditorShaderArgument
+{
+	MaterialEditorShaderArgumentType type;
+	union
+	{
+		bool asBool;
+		int asInt;
+		float asFloat;
+		void* asTexture;
+	};
+};
+
+struct MaterialEditorParameters
+{
+	MaterialEditorShaderArgument* arguments;
+	int count;
+};
+
+struct MaterialEditor
+{
+	const char* path;
+	MaterialEditorParameters parameters;
+};
+
 static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource)
 {
 	//Create and compile shaders
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create shadre of type
 	compileShader(vertexShader, vertexShaderSource);
 
 	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	compileShader(fragmentShader, fragmentShaderSource);
 
 	//Create and link shader programs
-	unsigned int shaders[] = { vertexShader, fragmentShader };
-	shaderProgram = createAndLinkProgram(shaders, SDL_arraysize(shaders));
+	unsigned int shaders[] = { vertexShader, fragmentShader }; //these can be specified
+
+	shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
 }
 
 Shader::Shader(const char* vertexPath, const char* fragmentPath)

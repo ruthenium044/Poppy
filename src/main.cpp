@@ -8,6 +8,66 @@
 #include "float4.h"
 #include "mat4x4.h"
 
+extern "C" {
+	// Let's hope this banger is always 4 bytes B) 
+	enum xxx_shader_type
+	{
+		XXX_SHADER_TYPE_VERTEX = 0,
+		XXX_SHADER_TYPE_FRAGMENT = 1,
+	};
+
+	//resources
+	struct xxx_buffer
+	{
+
+	};
+
+	struct xxx_shader
+	{
+
+	};
+
+	struct xxx_program
+	{
+
+	};
+
+	struct xxx_renderer
+	{
+		SDL_GLContext gl;
+	};
+
+	//apis
+
+	struct xxx_bufferApi
+	{
+
+		void(*destroy)(struct xxx_bufferApi*);
+	};
+
+	struct xxx_shaderApi
+	{
+		struct xxx_shader* (*create)(xxx_shader_type type, char* source, size_t size);
+		void(*destroy)(struct xxx_shader*);
+	};
+
+	struct xxx_programApi
+	{
+		struct xxx_program* (*create)(void);
+		void (*destroy)(struct xxx_program* program);
+	};
+
+	struct xxx_api
+	{
+		struct xxx_renderer* (*create)(void);
+		void(*destroy)(struct xxx_renderer*);
+		struct xxx_shaderApi* shader;
+		struct xxx_programApi* program;
+	};
+
+	struct xxx_api* xxx_load();
+}
+
 struct ConstantTexture
 {
 	GLuint value;
@@ -233,64 +293,12 @@ static void DrawSprite(Shader shader, unsigned int texture)
 
 int main()
 {
-	//LISTO TESTs
-	/*HeapAllocato heapAllocato;
-	{
-		Listo listo(&heapAllocato, 5);
-		listo.pushBack(1);
-		SDL_assert(listo[0] == 1);
-		SDL_assert(listo.getSize() == 1);
-		listo.popBack();
-		SDL_assert(listo.getSize() == 0);
-
-		listo.pushBack(2);
-		listo.pushBack(3);
-		SDL_assert(listo.getSize() == 2);
-		listo.insert(0, 4);
-		SDL_assert(listo[0] == 4);
-		listo.remove(0);
-		SDL_assert(listo[0] == 2);
-		listo.clear();
-		SDL_assert(listo.isEmpty());
-
-		for (auto element : listo)
-		{
-			SDL_assert(false && "Listo should be empty here");
-		}
-	}
-	{
-		Listo listo(&heapAllocato, 5);
-		Listo listo2 = listo;
-
-		listo2.pushBack(1);
-		SDL_assert(listo2[0] == 1);
-		SDL_assert(listo2.getSize() == 1);
-		listo2.popBack();
-		SDL_assert(listo2.getSize() == 0);
-
-		listo2.pushBack(2);
-		listo2.pushBack(3);
-		SDL_assert(listo2.getSize() == 2);
-		listo2.insert(0, 4);
-		SDL_assert(listo2[0] == 4);
-		listo2.remove(0);
-		SDL_assert(listo2[0] == 2);
-		listo2.clear();
-		SDL_assert(listo2.isEmpty());
-	}
-	*/
-
 	// Initialize SDL
 	if (SDL_Init(SDL_INIT_VIDEO) == false)
 	{
 		std::cerr << "SDL_Init Error: " << SDL_GetError() << std::endl;
 		return -1;
 	}
-
-	// Set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 	int windowWidth = 800;
 	int windowHeight = 600;
@@ -304,25 +312,7 @@ int main()
 		return -1;
 	}
 
-	// Create an OpenGL context
-	SDL_GLContext glContext = SDL_GL_CreateContext(window);
-	if (glContext == nullptr)
-	{
-		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-		SDL_Quit();
-		return -1;
-	}
-
-	// Initialize GLAD
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-	{
-		std::cerr << "Failed to initialize GLAD" << std::endl;
-		SDL_Quit();
-		return -1;
-	}
-
-	glViewport(0, 0, windowWidth, windowHeight);
-
+	
 	// Main loop flag
 	bool quit = false;
 
@@ -332,6 +322,7 @@ int main()
 	bool wirefame = false;
 
 	//todo move out
+	//idk what goes here
 	//create triangle
 	bool vsExists = std::filesystem::exists(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs");
 	SDL_assert(vsExists && "Shader file does not exist");
@@ -395,4 +386,59 @@ int main()
 	SDL_Quit();
 
 	return 0;
+}
+
+struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
+{
+	// Set OpenGL attributes
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+	// Create an OpenGL context
+	SDL_GLContext glContext = SDL_GL_CreateContext(window);
+	if (glContext == nullptr)
+	{
+		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+		SDL_Quit();
+		return nullptr;
+	}
+
+	// Initialize GLAD
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+	{
+		std::cerr << "Failed to initialize GLAD" << std::endl;
+		SDL_Quit();
+		return nullptr;
+	}
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+	glViewport(0, 0, windowWidth, windowHeight);
+}
+
+struct xxx_bufferApi g_bufferApi
+{
+
+};
+
+struct xxx_shaderApi g_shaderApi
+{
+
+};
+
+struct xxx_programApi g_programApi
+{
+};
+
+struct xxx_api g_renderApi
+{
+	.shader = &g_shaderApi,
+	.program = &g_programApi,
+		.create = 
+};
+
+xxx_api* xxx_load()
+{
+	return nullptr;
 }
