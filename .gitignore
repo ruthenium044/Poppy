@@ -9,3 +9,5 @@ build/
 
 # Exclude .vs directory
 .vs/
+
+.cache/

@@ -3,6 +3,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include <filesystem>
+#include "SDL3/SDL_stdinc.h"
 #include "shader.h"
 #include "float3.h"
 #include "float4.h"
@@ -34,7 +35,7 @@ extern "C" {
 
 	struct xxx_renderer
 	{
-		SDL_GLContext gl;
+		SDL_GLContext glContext;
 	};
 
 	//apis
@@ -291,6 +292,71 @@ static void DrawSprite(Shader shader, unsigned int texture)
 	//glDeleteProgram(shaderProgram);
 }
 
+struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
+{
+	xxx_renderer* renderer = (xxx_renderer*)SDL_malloc(sizeof(*renderer));
+
+	// Set OpenGL attributes
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+	// Create an OpenGL context
+	renderer->glContext = SDL_GL_CreateContext(window);
+
+	if (renderer->glContext == nullptr)
+	{
+		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+		SDL_Quit();
+		return nullptr;
+	}
+
+	// Initialise GLAD
+	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+	{
+		std::cerr << "Failed to initialize GLAD" << std::endl;
+		SDL_Quit();
+		return nullptr;
+	}
+	int windowWidth, windowHeight;
+	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+
+	glViewport(0, 0, windowWidth, windowHeight);
+	return renderer;
+}
+
+void xxx_rendererDestroy(xxx_renderer* renderer)
+{
+	SDL_GL_DestroyContext(renderer->glContext);
+	SDL_free(renderer);
+};
+
+struct xxx_bufferApi g_bufferApi
+{
+
+};
+
+struct xxx_shaderApi g_shaderApi
+{
+
+};
+
+struct xxx_programApi g_programApi
+{
+};
+
+struct xxx_api g_renderApi
+{
+	.shader = &g_shaderApi,
+	.program = &g_programApi,
+		.create = 
+};
+
+xxx_api* xxx_load()
+{
+	return nullptr;
+}
+
 int main()
 {
 	// Initialize SDL
@@ -311,8 +377,9 @@ int main()
 		SDL_Quit();
 		return -1;
 	}
-
 	
+	xxx_renderer* renderer = xxx_rendererCreate(window);
+
 	// Main loop flag
 	bool quit = false;
 
@@ -334,13 +401,6 @@ int main()
 	GetSimple2dShader();
 
 	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
-
-
-	//struct texture_user_blob
-	//{
-	//	unsigned int texture;
-	//	..
-	//};
 
 	while (!quit)
 	{
@@ -374,6 +434,7 @@ int main()
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		//this goes somewheer?
 		DrawSprite(triangleShader, texutre);
 
 		// Update window
@@ -381,64 +442,10 @@ int main()
 	}
 
 	// Clean up
-	SDL_GL_DestroyContext(glContext);
+	xxx_rendererDestroy(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 
 	return 0;
 }
 
-struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
-{
-	// Set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-
-	// Create an OpenGL context
-	SDL_GLContext glContext = SDL_GL_CreateContext(window);
-	if (glContext == nullptr)
-	{
-		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-		SDL_Quit();
-		return nullptr;
-	}
-
-	// Initialise GLAD
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-	{
-		std::cerr << "Failed to initialize GLAD" << std::endl;
-		SDL_Quit();
-		return nullptr;
-	}
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
-
-	glViewport(0, 0, windowWidth, windowHeight);
-}
-
-struct xxx_bufferApi g_bufferApi
-{
-
-};
-
-struct xxx_shaderApi g_shaderApi
-{
-
-};
-
-struct xxx_programApi g_programApi
-{
-};
-
-struct xxx_api g_renderApi
-{
-	.shader = &g_shaderApi,
-	.program = &g_programApi,
-		.create = 
-};
-
-xxx_api* xxx_load()
-{
-	return nullptr;
-}
