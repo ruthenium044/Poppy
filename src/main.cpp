@@ -404,7 +404,7 @@ struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
 		return nullptr;
 	}
 
-	// Initialize GLAD
+	// Initialise GLAD
 	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
 	{
 		std::cerr << "Failed to initialize GLAD" << std::endl;
