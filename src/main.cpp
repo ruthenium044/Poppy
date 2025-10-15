@@ -2,7 +2,6 @@
 #include <SDL3_image/SDL_image.h>
 #include <glad/glad.h>
 #include <iostream>
-#include <filesystem>
 #include "SDL3/SDL_stdinc.h"
 #include "shader.h"
 
@@ -59,7 +58,7 @@ int main()
 			}
 		}
 
-		if (wirefame)
+		//if (wirefame)
 		{
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}

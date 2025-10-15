@@ -5,15 +5,16 @@
 #include <SDL3_image/SDL_image.h>
 #include <glad/glad.h>
 #include <iostream>
+#include <sstream>
+#include <fstream>
 #include <filesystem>
 #include "SDL3/SDL_stdinc.h"
-#include "shader.h"
 #include "float3.h"
 #include "float4.h"
 #include "mat4x4.h"
 #include <stddef.h>
 
-extern "C" {
+//extern "C" {
 	//resources
 	struct xxx_buffer
 	{
@@ -43,7 +44,7 @@ extern "C" {
 		xxx_graphicsPipeline circlePipeline;
 		xxx_graphicsPipeline spritePipeline;
 	};
-}
+//}
 
 struct ConstantTexture
 {

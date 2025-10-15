@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-extern "C" {
+//extern "C" {
     enum xxx_shader_type
 	{
 		XXX_SHADER_TYPE_VERTEX = 0,
@@ -36,6 +36,6 @@ extern "C" {
 	};
 
 	struct xxx_api* xxx_load();
-}
+//}
 
 #endif

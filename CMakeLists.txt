@@ -62,4 +62,9 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE "GL_RESOURCE_DIRECTORY_PATH= 
 
 add_dependencies(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image)
 
-target_link_libraries(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image opengl32)
+if (APPLE)
+    target_link_libraries(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image "-framework OpenGL")
+elseif (WIN32)
+    target_link_libraries(${PROJECT_NAME} SDL3::SDL3 SDL3_image::SDL3_image opengl32)
+endif()
+
