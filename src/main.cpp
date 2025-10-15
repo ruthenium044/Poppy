@@ -10,13 +10,14 @@
 #include "mat4x4.h"
 
 extern "C" {
-	// Let's hope this banger is always 4 bytes B) 
+	
+
+	//move to .cpp
 	enum xxx_shader_type
 	{
 		XXX_SHADER_TYPE_VERTEX = 0,
 		XXX_SHADER_TYPE_FRAGMENT = 1,
 	};
-
 	//resources
 	struct xxx_buffer
 	{
@@ -30,16 +31,25 @@ extern "C" {
 
 	struct xxx_program
 	{
+		unsigned int id;
+	};
 
+	struct xxx_graphicsPipeline
+	{
+		xxx_program program;
+		
 	};
 
 	struct xxx_renderer
 	{
 		SDL_GLContext glContext;
+		xxx_graphicsPipeline rectPipeline;
+		xxx_graphicsPipeline circlePipeline;
+		xxx_graphicsPipeline spritePipeline;
 	};
 
 	//apis
-
+	//these are only in .h ecverything else in cpp
 	struct xxx_bufferApi
 	{
 
@@ -49,7 +59,7 @@ extern "C" {
 	struct xxx_shaderApi
 	{
 		struct xxx_shader* (*create)(xxx_shader_type type, char* source, size_t size);
-		void(*destroy)(struct xxx_shader*);
+		void(*destroy)(struct xxx_shader*); //in this one delete program
 	};
 
 	struct xxx_programApi
@@ -274,7 +284,7 @@ static void DrawSprite(Shader shader, unsigned int texture)
 	mat4x4 trans = mat4x4(1.0f);
 	//trans = translate(trans, float3(1.0f, 0.0f, 0.0f));
 	//trans = scale(trans, float3(0.5, 0.5, 0.5));
-	//trans = rotationZ(trans, 0.5);
+	//trans = rotationZ(trans, 0.5); 
 	//print(trans);
 
 	unsigned int transformLoc = glGetUniformLocation(shader.ID, "transform");
@@ -283,7 +293,7 @@ static void DrawSprite(Shader shader, unsigned int texture)
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
 	//glDrawArrays(GL_TRIANGLES, 0, 3);
-
+	
 	//unbinds?
 	//vao unbnd before ebo
 	//glDeleteVertexArrays(1, &VAO);
@@ -322,34 +332,38 @@ struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
 	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
 
 	glViewport(0, 0, windowWidth, windowHeight);
+
+	createPipeline(&renderer->rectPipeline);
+	createPipeline(&renderer->circlePipeline);
+	createPipeline(&renderer->spritePipeline);
+
 	return renderer;
+}
+//these move to cpp?
+
+void createPipeline(xxx_graphicsPipeline* pipeline)//pass paths here
+{
+	bool wirefame = false;
+
+	bool vsExists = std::filesystem::exists(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs");
+	SDL_assert(vsExists && "Shader file does not exist");
+	bool fExists = std::filesystem::exists(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
+	SDL_assert(fExists && "Shader file does not exist");
+	
+	//todo movew this shit out of the class
+	Shader triangleShader(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
+
+	GetSimple2dShader();
+
+	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
+
+	pipeline->program.id = triangleShader.ID;
 }
 
 void xxx_rendererDestroy(xxx_renderer* renderer)
 {
 	SDL_GL_DestroyContext(renderer->glContext);
 	SDL_free(renderer);
-};
-
-struct xxx_bufferApi g_bufferApi
-{
-
-};
-
-struct xxx_shaderApi g_shaderApi
-{
-
-};
-
-struct xxx_programApi g_programApi
-{
-};
-
-struct xxx_api g_renderApi
-{
-	.shader = &g_shaderApi,
-	.program = &g_programApi,
-		.create = 
 };
 
 xxx_api* xxx_load()
@@ -386,22 +400,7 @@ int main()
 	// Event handler
 	SDL_Event e;
 
-	bool wirefame = false;
-
-	//todo move out
-	//idk what goes here
-	//create triangle
-	bool vsExists = std::filesystem::exists(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs");
-	SDL_assert(vsExists && "Shader file does not exist");
-	bool fExists = std::filesystem::exists(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
-	SDL_assert(fExists && "Shader file does not exist");
-
-	Shader triangleShader(GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
-
-	GetSimple2dShader();
-
-	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
-
+	
 	while (!quit)
 	{
 		while (SDL_PollEvent(&e) != 0)
