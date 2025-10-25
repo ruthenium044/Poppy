@@ -3,13 +3,16 @@
 
 #include <stddef.h>
 
+struct ppy_renderer;
+struct SDL_Window;
+
 enum ppy_shader_type
 {
 	ppy_SHADER_TYPE_VERTEX = 0,
 	ppy_SHADER_TYPE_FRAGMENT = 1,
 };
 
-   struct ppy_bufferApi
+struct ppy_bufferApi
 {
 	void(*destroy)(struct ppy_bufferApi*);
 };
@@ -28,9 +31,10 @@ struct ppy_programApi
 
 struct ppy_api
 {
-	struct ppy_renderer* (*create)(SDL_Window* window);
-	void(*draw)();
-	void(*destroy)(struct ppy_renderer*);
+	ppy_renderer* (*create)(SDL_Window* window);
+	void(*draw)(ppy_renderer*);
+	void(*destroy)(ppy_renderer*);
+	//might need in the future if creating stuff from outside
 	//struct ppy_shaderApi* shader;
 	//struct ppy_programApi* program;
 };

@@ -1,4 +1,5 @@
-#include "shader.h"
+#include "poppy.h"
+//#include "poppy.inl"
 
 #include "SDL3/SDL_stdinc.h"
 #include <SDL3/SDL.h>
@@ -32,7 +33,12 @@ struct ppy_program
 struct ppy_graphicsPipeline
 {
 	ppy_program program;
-	
+};
+
+struct ppy_graphicsSpritePipeline
+{
+	ppy_graphicsPipeline gpuPipeline;
+	unsigned int texutres;
 };
 
 struct ppy_renderer
@@ -41,152 +47,18 @@ struct ppy_renderer
 	ppy_graphicsPipeline rectPipeline;
 	ppy_graphicsPipeline circlePipeline;
 	ppy_graphicsPipeline spritePipeline;
+
+	unsigned int texutre;
 };
 
-struct ConstantTexture
+// ==========================================================
+// Shader
+// ==========================================================
+
+void bindTexture(unsigned int texture)
 {
-	GLuint value;
-};
-
-struct ConstantTextureLookupItem
-{
-	const char* key;
-	ConstantTexture texture;
-};
-
-struct ConstantTextureLookup
-{
-	ConstantTextureLookupItem* items;
-	size_t capacity;
-};
-
-static unsigned long long ConstantTextureLookupHash(const char* str)
-{
-	unsigned long long hash = 5381;
-	while (*str)
-	{
-		char c = *str++;
-		hash = ((hash << 5) + hash) + (unsigned char)c;
-	}
-
-	return hash;
-}
-
-ConstantTextureLookup ConstantTextureLookupCreate(size_t capacity)
-{
-	ConstantTextureLookup lookup;
-	lookup.items = (ConstantTextureLookupItem*)malloc(sizeof(*lookup.items) * capacity);
-	lookup.capacity = capacity;
-	memset(lookup.items, 0, sizeof(*lookup.items) * capacity);
-	return lookup;
-}
-
-void ConstantTextureLookupAdd(ConstantTextureLookup* lookup, const char* key, ConstantTexture* texture)
-{
-	unsigned long long slot = ConstantTextureLookupHash(key) % lookup->capacity;
-	for (size_t index = 0; index < lookup->capacity; index++)
-	{
-		size_t at = (slot + index) % lookup->capacity;
-		ConstantTextureLookupItem* item = &lookup->items[at];
-		if (item->key == nullptr)
-		{
-			item->key = key;
-			item->texture.value = texture->value;
-			return;
-		}
-		int result = strcmp(item->key, key);
-		if (result == 0)
-		{
-			return;
-		}
-		// Collision, result != 0 -> different key stored already, continue
-	}
-}
-
-ConstantTexture* ConstantTextureLookupGet(ConstantTextureLookup* lookup, const char* key)
-{
-	unsigned long long slot = ConstantTextureLookupHash(key) % lookup->capacity;
-	for (size_t index = 0; index < lookup->capacity; index++)
-	{
-		size_t at = (slot + index) % lookup->capacity;
-		ConstantTextureLookupItem* item = &lookup->items[at];
-		if (item->key == nullptr)
-		{
-			return nullptr;
-		}
-		int result = strcmp(item->key, key);
-		if (result == 0)
-		{
-			return &item->texture;
-		}
-	}
-	// Increase load factor pls
-	return nullptr;
-}
-
-ConstantTextureLookup textureLookup = ConstantTextureLookupCreate(128);
-
-void GlobalTextureAdd(const char* key, ConstantTexture* texture)
-{
-	ConstantTextureLookupAdd(&textureLookup, key, texture);
-}
-
-ConstantTexture* GlobalTextureGet(const char* key)
-{
-	return ConstantTextureLookupGet(&textureLookup, key);
-}
-
-static void GetSimple2dShader()
-{
-	//attributes: position, color, texture coords
-	float vertices[] = {
-		// positions          // colors           // texture coords
-		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
-		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
-		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
-		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
-	};
-	
-	unsigned int indices[] =  // note that we start from 0!
-	{
-		0, 1, 3,   // first triangle
-		1, 2, 3    // second triangle
-	};
-
-	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-	//GL_STATIC_DRAW : the data is set only once and used many times.
-	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
-
-	//VAO
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	//VBO
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	//EBO
-	unsigned int EBO;
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
-
-	//Set vertex attributes pointers
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// color attribute
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	// texture coord attribute
-	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
-	glEnableVertexAttribArray(2);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, texture);
 }
 
 unsigned int loadImage(const char* path)
@@ -215,25 +87,7 @@ unsigned int loadImage(const char* path)
 
 	SDL_DestroySurface(surface);
 
-	ConstantTexture constantTexture;
-	constantTexture.value = texture;
-	GlobalTextureAdd(path, &constantTexture);
-
 	return texture;
-}
-
-void bindTexture(unsigned int texture)
-{
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
-}
-
-void bindTexture(const char* key)
-{
-	ConstantTexture* texture = GlobalTextureGet(key);
-
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture->value);
 }
 
 void checkCompileErrors(unsigned int shader, std::string type)
@@ -309,12 +163,14 @@ unsigned int createProgram(unsigned int shaders[], int count)
 static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource)
 {
 	//Create and compile shaders
-	unsigned int shaders[2];
+	int legth = 0;
+	unsigned int shaders[2] = { 0, 0 };
 	if (vertexShaderSource)
 	{
 		unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create shadre of type
 		compileShader(vertexShader, vertexShaderSource);
 		shaders[0] = vertexShader;
+		legth++;
 	}
 
 	if (fragmentShaderSource)
@@ -322,10 +178,14 @@ static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* verte
 		unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 		compileShader(fragmentShader, fragmentShaderSource);
 		shaders[1] = fragmentShader;
+		legth++;
 	}
 
 	//Create and link shader programs
-	shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
+	if (legth > 0)
+	{
+		shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
+	}
 }
 
 unsigned int createShader(const char* vertexPath, const char* fragmentPath)
@@ -333,15 +193,16 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
     std::ifstream vertexFile;
     std::ifstream shaderFile;
   
-	const char* vertexCode;
-    const char* fragmentCode;
+	const char* vertexCode = nullptr;
+	std::string vertexStream;
+
+    const char* fragmentCode = nullptr;
+	std::string fragmentStream;
 
 	//todo func these
 	if(vertexPath)
 	{
 		vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-		std::string vertexStream;
 		vertexFile.open(vertexPath);
 
 		std::stringstream vShaderStream;
@@ -356,8 +217,6 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 	if(fragmentPath)
 	{
 		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-
-		std::string fragmentStream;
         shaderFile.open(fragmentPath);
 
         std::stringstream fShaderStream;  
@@ -373,6 +232,74 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 	unsigned int ID;
 	CompileAndLinkShaders(ID, vertexCode, fragmentCode); 
 	return ID;
+}
+
+void setBool(ppy_program* program, const std::string& name, bool value)
+{
+	glUniform1i(glGetUniformLocation(program->id, name.c_str()), (int)value);
+}
+
+void setInt(ppy_program* program, const std::string& name, int value)
+{
+	glUniform1i(glGetUniformLocation(program->id, name.c_str()), value);
+}
+
+void setFloat(ppy_program* program, const std::string& name, float value)
+{
+	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
+}
+
+static void GetSimple2dShader()
+{
+	//attributes: position, color, texture coords
+	float vertices[] = {
+		// positions          // colors           // texture coords
+		 0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,   1.0f, 1.0f,   // top right
+		 0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,   1.0f, 0.0f,   // bottom right
+		-0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,   0.0f, 0.0f,   // bottom left
+		-0.5f,  0.5f, 0.0f,   1.0f, 1.0f, 0.0f,   0.0f, 1.0f    // top left 
+	};
+
+	unsigned int indices[] =  // note that we start from 0!
+	{
+		0, 1, 3,   // first triangle
+		1, 2, 3    // second triangle
+	};
+
+	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+	//GL_STATIC_DRAW : the data is set only once and used many times.
+	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
+
+	//VAO
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	//VBO
+	unsigned int VBO;
+	glGenBuffers(1, &VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	//EBO
+	unsigned int EBO;
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	//Set vertex attributes pointers
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	// color attribute
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	// texture coord attribute
+	glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+	glEnableVertexAttribArray(2);
 }
 
 void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
@@ -394,11 +321,13 @@ void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nul
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
 
 	GetSimple2dShader();
-
-	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
 }
 
-struct ppy_renderer* rendererCreate(SDL_Window* window)
+// ==========================================================
+// API
+// ==========================================================
+
+ppy_renderer* rendererCreate(SDL_Window* window)
 {
 	ppy_renderer* renderer = (ppy_renderer*)SDL_malloc(sizeof(*renderer));
 
@@ -429,6 +358,8 @@ struct ppy_renderer* rendererCreate(SDL_Window* window)
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
+	renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
+
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
 	createPipeline(&renderer->circlePipeline);
 	createPipeline(&renderer->spritePipeline);
@@ -436,40 +367,14 @@ struct ppy_renderer* rendererCreate(SDL_Window* window)
 	return renderer;
 }
 
-static void rendererDestroy(ppy_renderer* renderer)
+static void drawSprite(ppy_renderer* renderer)
 {
-	SDL_GL_DestroyContext(renderer->glContext);
-	SDL_free(renderer);
-};
-
-void use(ppy_program* program)
-{
-	glUseProgram(program->id);
-}
-
-void setBool( ppy_program* program, const std::string& name, bool value )
-{
-	glUniform1i(glGetUniformLocation(program->id, name.c_str()), (int)value);
-}
-
-void setInt(ppy_program* program, const std::string& name, int value )
-{
-	glUniform1i(glGetUniformLocation(program->id, name.c_str()), value);
-}
-
-void setFloat(ppy_program* program, const std::string& name, float value )
-{
-	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
-}
-
-static void drawSprite()
-{
-	bindTexture(texture);
+	bindTexture(renderer->texutre);
 
 	//Use shader program when rendering
-	use(program);
+	glUseProgram(renderer->spritePipeline.program.id);
 
-	setInt(program, "texture", 1);
+	setInt(&renderer->spritePipeline.program, "texture", 1);
 
 	mat4x4 trans = mat4x4(1.0f);
 	//trans = translate(trans, float3(1.0f, 0.0f, 0.0f));
@@ -477,7 +382,7 @@ static void drawSprite()
 	//trans = rotationZ(trans, 0.5); 
 	//print(trans);
 
-	unsigned int transformLoc = glGetUniformLocation(program->id, "transform");
+	unsigned int transformLoc = glGetUniformLocation(renderer->spritePipeline.program.id, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, trans.elements);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
@@ -490,6 +395,23 @@ static void drawSprite()
 	//glDeleteBuffers(1, &VBO);
 	//glDeleteBuffers(1, &EBO);
 	//glDeleteProgram(shaderProgram);
+}
+
+static void rendererDestroy(ppy_renderer* renderer)
+{
+	SDL_GL_DestroyContext(renderer->glContext);
+	SDL_free(renderer);
+};
+
+static ppy_api api = {
+	.create = rendererCreate,
+	.draw = drawSprite,
+	.destroy = rendererDestroy
+};
+
+ppy_api* ppy_get()
+{
+	return &api;
 }
 
 /*
@@ -532,13 +454,3 @@ struct MaterialEditor
 };
 */
 
-static ppy_api api = {
-	.create = rendererCreate,
-	.draw = drawSprite,
-	.destroy = rendererDestroy
-};
-
-ppy_api* ppy_get()
-{
-	return &api;
-}

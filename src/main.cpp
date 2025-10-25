@@ -67,8 +67,7 @@ int main()
 		glClearColor(0.3f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 
-		//this goes somewheer?
-		ppy->draw();
+		ppy->draw(renderer);
 
 		// Update window
 		SDL_GL_SwapWindow(window);
