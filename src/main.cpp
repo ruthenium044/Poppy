@@ -3,7 +3,7 @@
 #include <glad/glad.h>
 #include <iostream>
 #include "SDL3/SDL_stdinc.h"
-#include "shader.h"
+#include "poppy.h"
 
 int main()
 {
@@ -26,7 +26,8 @@ int main()
 		return -1;
 	}
 	
-	xxx_renderer* renderer = xxx_rendererCreate(window);
+	ppy_api* ppy = ppy_get();
+	ppy_renderer* renderer = ppy->create(window);
 
 	// Main loop flag
 	bool quit = false;
@@ -34,7 +35,6 @@ int main()
 	// Event handler
 	SDL_Event e;
 
-	
 	while (!quit)
 	{
 		while (SDL_PollEvent(&e) != 0)
@@ -68,14 +68,14 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		//this goes somewheer?
-		DrawSprite(triangleShader, texutre);
+		ppy->draw();
 
 		// Update window
 		SDL_GL_SwapWindow(window);
 	}
 
 	// Clean up
-	xxx_rendererDestroy(renderer);
+	ppy->destroy(renderer);
 	SDL_DestroyWindow(window);
 	SDL_Quit();
 

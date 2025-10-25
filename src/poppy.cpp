@@ -14,37 +14,34 @@
 #include "mat4x4.h"
 #include <stddef.h>
 
-//extern "C" {
-	//resources
-	struct xxx_buffer
-	{
+struct ppy_buffer
+{
 
-	};
+};
 
-	struct xxx_shader
-	{
+struct ppy_shader
+{
 
-	};
+};
 
-	struct xxx_program
-	{
-		unsigned int id;
-	};
+struct ppy_program
+{
+	unsigned int id;
+};
 
-	struct xxx_graphicsPipeline
-	{
-		xxx_program program;
-		
-	};
+struct ppy_graphicsPipeline
+{
+	ppy_program program;
+	
+};
 
-	struct xxx_renderer
-	{
-		SDL_GLContext glContext;
-		xxx_graphicsPipeline rectPipeline;
-		xxx_graphicsPipeline circlePipeline;
-		xxx_graphicsPipeline spritePipeline;
-	};
-//}
+struct ppy_renderer
+{
+	SDL_GLContext glContext;
+	ppy_graphicsPipeline rectPipeline;
+	ppy_graphicsPipeline circlePipeline;
+	ppy_graphicsPipeline spritePipeline;
+};
 
 struct ConstantTexture
 {
@@ -312,32 +309,38 @@ unsigned int createProgram(unsigned int shaders[], int count)
 static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource)
 {
 	//Create and compile shaders
-	unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create shadre of type
-	compileShader(vertexShader, vertexShaderSource);
+	unsigned int shaders[2];
+	if (vertexShaderSource)
+	{
+		unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create shadre of type
+		compileShader(vertexShader, vertexShaderSource);
+		shaders[0] = vertexShader;
+	}
 
-	unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-	compileShader(fragmentShader, fragmentShaderSource);
+	if (fragmentShaderSource)
+	{
+		unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+		compileShader(fragmentShader, fragmentShaderSource);
+		shaders[1] = fragmentShader;
+	}
 
 	//Create and link shader programs
-	unsigned int shaders[] = { vertexShader, fragmentShader }; //these can be specified
-
 	shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
 }
 
 unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 {
-	//todo is this correct?
     std::ifstream vertexFile;
     std::ifstream shaderFile;
   
-    vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-    shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
- 
 	const char* vertexCode;
     const char* fragmentCode;
 
+	//todo func these
 	if(vertexPath)
 	{
+		vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
 		std::string vertexStream;
 		vertexFile.open(vertexPath);
 
@@ -352,6 +355,8 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
         
 	if(fragmentPath)
 	{
+		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+
 		std::string fragmentStream;
         shaderFile.open(fragmentPath);
 
@@ -364,12 +369,13 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 		fragmentCode = fragmentStream.c_str();
 	}
 
+	//todo pass in array??
 	unsigned int ID;
-	CompileAndLinkShaders(ID, vertexCode, fragmentCode);
+	CompileAndLinkShaders(ID, vertexCode, fragmentCode); 
 	return ID;
 }
 
-void createPipeline(xxx_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
+void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
 {
 	bool wirefame = false;
 
@@ -392,9 +398,9 @@ void createPipeline(xxx_graphicsPipeline* pipeline, const char* vertexPath = nul
 	unsigned int texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
 }
 
-struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
+struct ppy_renderer* rendererCreate(SDL_Window* window)
 {
-	xxx_renderer* renderer = (xxx_renderer*)SDL_malloc(sizeof(*renderer));
+	ppy_renderer* renderer = (ppy_renderer*)SDL_malloc(sizeof(*renderer));
 
 	// Set OpenGL attributes
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
@@ -430,38 +436,33 @@ struct xxx_renderer* xxx_rendererCreate(SDL_Window* window)
 	return renderer;
 }
 
-void xxx_rendererDestroy(xxx_renderer* renderer)
+static void rendererDestroy(ppy_renderer* renderer)
 {
 	SDL_GL_DestroyContext(renderer->glContext);
 	SDL_free(renderer);
 };
 
-xxx_api* xxx_load()
-{
-	return nullptr;
-}
-
-void use(xxx_program* program)
+void use(ppy_program* program)
 {
 	glUseProgram(program->id);
 }
 
-void setBool( xxx_program* program, const std::string& name, bool value )
+void setBool( ppy_program* program, const std::string& name, bool value )
 {
 	glUniform1i(glGetUniformLocation(program->id, name.c_str()), (int)value);
 }
 
-void setInt(xxx_program* program, const std::string& name, int value )
+void setInt(ppy_program* program, const std::string& name, int value )
 {
 	glUniform1i(glGetUniformLocation(program->id, name.c_str()), value);
 }
 
-void setFloat(xxx_program* program, const std::string& name, float value )
+void setFloat(ppy_program* program, const std::string& name, float value )
 {
 	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
 }
 
-static void DrawSprite(xxx_program* program, unsigned int texture)
+static void drawSprite()
 {
 	bindTexture(texture);
 
@@ -530,3 +531,14 @@ struct MaterialEditor
 	MaterialEditorParameters parameters;
 };
 */
+
+static ppy_api api = {
+	.create = rendererCreate,
+	.draw = drawSprite,
+	.destroy = rendererDestroy
+};
+
+ppy_api* ppy_get()
+{
+	return &api;
+}

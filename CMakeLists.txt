@@ -54,7 +54,7 @@ file(GLOB_RECURSE HEADERS "src/*.h")
 file(GLOB_RECURSE SOURCES_CPP "src/*.cpp")
 file(GLOB_RECURSE SOURCES_C "src/*.c")
 
-add_executable(${PROJECT_NAME} ${SOURCES_CPP} ${SOURCES_C} ${HEADERS}  "src/shader.h")
+add_executable(${PROJECT_NAME} ${SOURCES_CPP} ${SOURCES_C} ${HEADERS}  "src/poppy.h")
 
 # Absolute path to the engine/dev resources!!
 set(GL_RESOURCE_DIRECTORY_PATH "${CMAKE_CURRENT_SOURCE_DIR}")
