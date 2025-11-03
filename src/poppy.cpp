@@ -356,11 +356,11 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 
 	glViewport(0, 0, windowWidth, windowHeight);
 
-	renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
-
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
 	createPipeline(&renderer->circlePipeline);
 	createPipeline(&renderer->spritePipeline);
+
+	renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
 
 	return renderer;
 }
@@ -370,17 +370,17 @@ static void drawSprite(ppy_renderer* renderer)
 	bindTexture(renderer->texutre);
 
 	//Use shader program when rendering
-	glUseProgram(renderer->spritePipeline.program.id);
+	glUseProgram(renderer->rectPipeline.program.id);
 
-	setInt(&renderer->spritePipeline.program, "texture", 1);
+	setInt(&renderer->rectPipeline.program, "texture", 1);
 
 	mat4x4 trans = mat4x4(1.0f);
-	//trans = translate(trans, float3(1.0f, 0.0f, 0.0f));
-	//trans = scale(trans, float3(0.5, 0.5, 0.5));
+	trans = translate(trans, float3(1.0f, 0.0f, 0.0f));
+	trans = scale(trans, float3(0.5, 0.5, 0.5));
 	//trans = rotationZ(trans, 0.5); 
 	//print(trans);
 
-	unsigned int transformLoc = glGetUniformLocation(renderer->spritePipeline.program.id, "transform");
+	unsigned int transformLoc = glGetUniformLocation(renderer->rectPipeline.program.id, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, trans.elements);
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
