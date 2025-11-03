@@ -60,7 +60,7 @@ int main()
 
 		//if (wirefame)
 		{
-			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+			//glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 		}
 
 		// Clear screen

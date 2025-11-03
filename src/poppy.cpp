@@ -304,8 +304,6 @@ static void GetSimple2dShader()
 
 void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
 {
-	bool wirefame = false;
-
 	if( vertexPath )
 	{
 		bool vsExists = std::filesystem::exists(vertexPath);
@@ -332,8 +330,8 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 	ppy_renderer* renderer = (ppy_renderer*)SDL_malloc(sizeof(*renderer));
 
 	// Set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 4);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 4);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
 	// Create an OpenGL context
@@ -384,6 +382,7 @@ static void drawSprite(ppy_renderer* renderer)
 
 	unsigned int transformLoc = glGetUniformLocation(renderer->spritePipeline.program.id, "transform");
 	glUniformMatrix4fv(transformLoc, 1, GL_FALSE, trans.elements);
+	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
