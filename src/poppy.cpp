@@ -1,19 +1,16 @@
 #include "poppy.h"
-//#include "poppy.inl"
 
 #include "SDL3/SDL_stdinc.h"
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
+
 #include <glad/glad.h>
 #include <iostream>
 #include <sstream>
 #include <fstream>
 #include <filesystem>
-#include "SDL3/SDL_stdinc.h"
 #include "float3.h"
-#include "float4.h"
 #include "mat4x4.h"
-#include <stddef.h>
 
 struct ppy_buffer
 {
