@@ -1,5 +1,6 @@
 #pragma once
 #include "float3.h"
+#include "float4.h"
 
 struct mat4x4
 {
