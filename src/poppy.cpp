@@ -42,6 +42,7 @@ struct ppy_renderer
 {
 	SDL_GLContext glContext;
 	ppy_graphicsPipeline rectPipeline;
+	ppy_graphicsPipeline lightPipeline;
 	ppy_graphicsPipeline circlePipeline;
 	ppy_graphicsPipeline spritePipeline;
 
@@ -246,6 +247,16 @@ void setFloat(ppy_program* program, const std::string& name, float value)
 	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
 }
 
+void setFloat3(ppy_program* program, const std::string& name, float3 value)
+{
+	glUniform3f(glGetUniformLocation(program->id, name.c_str()), value.x, value.y, value.z);
+}
+
+void setMat4x4(ppy_program* program, const std::string& name, mat4x4 value)
+{
+	glUniformMatrix4fv(glGetUniformLocation(program->id, name.c_str()), 1, GL_FALSE, value.elements);
+}
+
 static void GetSimple2dShader()
 {
 	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
@@ -253,47 +264,47 @@ static void GetSimple2dShader()
 	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
 
 	float vertices[] = {
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
 
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+		-0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
 
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
 
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
 
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+		-0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f, -0.5f,
+		 0.5f, -0.5f,  0.5f,
+		 0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f, -0.5f,
 
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
-	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
-	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
-	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+		-0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f, -0.5f,
+		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f, -0.5f,
 	};
 
 	//VAO
@@ -316,6 +327,19 @@ static void GetSimple2dShader()
 	// texture coord attribute
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
+
+	//todo break out?
+
+	// second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
+	unsigned int lightCubeVAO;
+	glGenVertexArrays(1, &lightCubeVAO);
+	glBindVertexArray(lightCubeVAO);
+
+	// we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
 }
 
 void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
@@ -334,7 +358,6 @@ void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nul
 
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
 
-	GetSimple2dShader();
 }
 
 // ==========================================================
@@ -375,6 +398,10 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 	glEnable(GL_DEPTH_TEST);
 
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
+	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
+
+	GetSimple2dShader();
+
 	createPipeline(&renderer->circlePipeline);
 	createPipeline(&renderer->spritePipeline);
 
@@ -385,19 +412,35 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 
 static void drawSprite(ppy_renderer* renderer)
 {
+	//light
+	glUseProgram(renderer->lightPipeline.program.id);
+
+	mat4x4 trLight = mat4x4(1.0f);
+	trLight = translate(trLight, float3(1.0f, 1.0f, 0.0f));
+	trLight = scale(trLight, float3(0.25, 0.25, 0.25));
+
+	setMat4x4(&renderer->lightPipeline.program, "transform", trLight);
+
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	//cube itself
+
 	bindTexture(renderer->texutre);
 
 	//Use shader program when rendering
 	glUseProgram(renderer->rectPipeline.program.id);
 
+	setFloat3(&renderer->rectPipeline.program, "objectColor", float3(1.0f, 0.5f, 0.31f));
+	setFloat3(&renderer->rectPipeline.program, "lightColor", float3(1.0f, 1.0f, 1.0f));
+
 	setInt(&renderer->rectPipeline.program, "texture", 1);
 
-	mat4x4 trans = mat4x4(1.0f);
-	trans = scale(trans, float3(0.5, 0.5, 0.5));
-	trans = rotationZ(trans, 0.5); 
+	mat4x4 trCube = mat4x4(1.0f);
+	trCube = scale(trCube, float3(0.5, 0.5, 0.5));
+	trCube = rotationZ(trCube, 0.5); 
 
-	trans = rotationX(trans, (float)SDL_GetTicks() * 0.0002);
-	trans = rotationZ( trans, (float)SDL_GetTicks() * 0.0002);
+	trCube = rotationX(trCube, (float)SDL_GetTicks() * 0.0002);
+	trCube = rotationZ( trCube, (float)SDL_GetTicks() * 0.0002);
 
 	//// create transformations
 	//glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
@@ -415,10 +458,8 @@ static void drawSprite(ppy_renderer* renderer)
 	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
 	//ourShader.setMat4("projection", projection);
 
-	unsigned int transformLocation = glGetUniformLocation(renderer->rectPipeline.program.id, "transform");
-	glUniformMatrix4fv(transformLocation, 1, GL_FALSE, trans.elements);
-
-
+	setMat4x4(&renderer->rectPipeline.program, "transform", trCube);
+	
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
