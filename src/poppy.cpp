@@ -30,6 +30,8 @@ struct ppy_program
 struct ppy_graphicsPipeline
 {
 	ppy_program program;
+	VertexLayoutDescElement desc[];
+	DataTypeBinding lightBindings[];
 };
 
 struct ppy_graphicsSpritePipeline
@@ -144,7 +146,7 @@ unsigned int createProgram(unsigned int shaders[], int count)
 	char infoLog[512];
 	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &success);
 
-	if (!success) 
+	if (!success)
 	{
 		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
 		std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
@@ -188,17 +190,17 @@ static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* verte
 
 unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 {
-    std::ifstream vertexFile;
-    std::ifstream shaderFile;
-  
+	std::ifstream vertexFile;
+	std::ifstream shaderFile;
+
 	const char* vertexCode = nullptr;
 	std::string vertexStream;
 
-    const char* fragmentCode = nullptr;
+	const char* fragmentCode = nullptr;
 	std::string fragmentStream;
 
 	//todo func these
-	if(vertexPath)
+	if (vertexPath)
 	{
 		vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
 		vertexFile.open(vertexPath);
@@ -211,24 +213,24 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 		vertexStream = vShaderStream.str();
 		vertexCode = vertexStream.c_str();
 	}
-        
-	if(fragmentPath)
+
+	if (fragmentPath)
 	{
 		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-        shaderFile.open(fragmentPath);
+		shaderFile.open(fragmentPath);
 
-        std::stringstream fShaderStream;  
-        fShaderStream << shaderFile.rdbuf();
-      
-        shaderFile.close();
-     
+		std::stringstream fShaderStream;
+		fShaderStream << shaderFile.rdbuf();
+
+		shaderFile.close();
+
 		fragmentStream = fShaderStream.str();
 		fragmentCode = fragmentStream.c_str();
 	}
 
 	//todo pass in array??
 	unsigned int ID;
-	CompileAndLinkShaders(ID, vertexCode, fragmentCode); 
+	CompileAndLinkShaders(ID, vertexCode, fragmentCode);
 	return ID;
 }
 
@@ -257,106 +259,122 @@ void setMat4x4(ppy_program* program, const std::string& name, mat4x4 value)
 	glUniformMatrix4fv(glGetUniformLocation(program->id, name.c_str()), 1, GL_FALSE, value.elements);
 }
 
-static void GetSimple2dShader()
+struct VertexLayoutDescElement
+{
+	int type; // I.e., GL_FLOAT or GL_INT
+	int size;
+	int normalized; // ...
+	int stride;
+};
+
+struct VertexLayout
+{
+	unsigned int vao;
+	// ...
+};
+
+static unsigned int CreateVAO(VertexLayoutDescElement* desc, size_t count)
+{
+	// Stores vertex attribute config
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	for (int index = 0; index < count; index++)
+	{
+
+		//move in
+	}
+
+	auto vertexSize = 6;
+
+	// position attribute
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+	return VAO;
+}
+
+static unsigned int GenerateCubeVBO()
 {
 	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
 	//GL_STATIC_DRAW : the data is set only once and used many times.
 	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
 
 	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
 
-		-0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
 
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f, -0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
 
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-		-0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f, -0.5f,
-		 0.5f, -0.5f,  0.5f,
-		 0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f,  0.5f,
-		-0.5f, -0.5f, -0.5f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
+		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
 
-		-0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f, -0.5f,
-		 0.5f,  0.5f,  0.5f,
-		 0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f,  0.5f,
-		-0.5f,  0.5f, -0.5f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
 	};
-
-	//VAO
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
 
 	//VBO
 	unsigned int VBO;
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	//Set vertex attributes pointers
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	// texture coord attribute
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-
-	//todo break out?
-
-	// second, configure the light's VAO (VBO stays the same; the vertices are the same for the light object which is also a 3D cube)
-	unsigned int lightCubeVAO;
-	glGenVertexArrays(1, &lightCubeVAO);
-	glBindVertexArray(lightCubeVAO);
-
-	// we only need to bind to the VBO (to link it with glVertexAttribPointer), no need to fill it; the VBO's data already contains all we need (it's already bound, but we do it again for educational purposes)
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
+	return VBO;
 }
 
 void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
 {
-	if( vertexPath )
+	if (vertexPath)
 	{
 		bool vsExists = std::filesystem::exists(vertexPath);
 		SDL_assert(vsExists && "Shader file does not exist");
 	}
-	
-	if( fragmentPath )
+
+	if (fragmentPath)
 	{
 		bool fExists = std::filesystem::exists(fragmentPath);
 		SDL_assert(fExists && "Shader file does not exist");
 	}
 
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
+
+	GenerateCubeVBO();
+
+	CreateVAO(desc, SDL_arraysize(desc));
+
 
 }
 
@@ -397,10 +415,19 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 
 	glEnable(GL_DEPTH_TEST);
 
+	renderer->rectPipeline.desc =
+	{
+		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+	};
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
-	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
 
-	GetSimple2dShader();
+	renderer->lightPipeline.desc =
+	{
+		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+	};
+	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
 
 	createPipeline(&renderer->circlePipeline);
 	createPipeline(&renderer->spritePipeline);
@@ -410,60 +437,99 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 	return renderer;
 }
 
+enum DataType
+{
+	DATA_TYPE_FLOAT3,
+	DATA_TYPE_MAT4x4,
+	DATA_TYPE_INT,
+};
+
+struct DataTypeBinding
+{
+	DataType type;
+	const char* name;
+	void* ptr;
+};
+
+static void whatver(DataTypeBinding* lightBindings, size_t count)
+{
+	for (size_t index = 0; index < count; index++)
+	{
+		DataTypeBinding binding = lightBindings[index];
+		switch (binding.type)
+		{
+		case DATA_TYPE_FLOAT3: break;
+			setFloat3
+		case DATA_TYPE_MAT4x4: break;
+		case DATA_TYPE_INT: break;
+		}
+	}
+
+}
+
 static void drawSprite(ppy_renderer* renderer)
 {
-	//light
-	glUseProgram(renderer->lightPipeline.program.id);
+
+	float3 lightPos = float3(0.6f, 0.5f, 1.0f);
+	float3 lightColor = float3(1.0f, 1.0f, 1.0f);
 
 	mat4x4 trLight = mat4x4(1.0f);
-	trLight = translate(trLight, float3(1.0f, 1.0f, 0.0f));
+	trLight = translate(trLight, lightPos);
 	trLight = scale(trLight, float3(0.25, 0.25, 0.25));
 
+	DataTypeBinding lightBindings[] =
+	{
+		{ DATA_TYPE_FLOAT3, "color", &lightColor},
+		{ DATA_TYPE_MAT4x4, "transform", &trLight},
+	};
+
+	//for all stuff
+	whatver(renderer->lightPipeline.lightBindings); //uniforms whatever
+	
+	mat4x4 model = mat4x4(1.0f);
+	model = scale(model, float3(0.5, 0.5, 0.5));
+	model = rotationX(model, (float)SDL_GetTicks() * 0.0002);
+	model = rotationY(model, (float)SDL_GetTicks() * 0.0002);
+
+	mat4x4 view = mat4x4(1.0f);
+	//view = translate(view, float3(0.0f, 0.0f, -3.0f));
+
+	//todo
+	mat4x4 projection = mat4x4(1.0f);
+	//projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+
+	//bindTexture(renderer->texutre);
+
+	//lightbulb
+	glUseProgram(renderer->lightPipeline.program.id);
+
+
+	setFloat3(&renderer->lightPipeline.program, "color", lightColor);
 	setMat4x4(&renderer->lightPipeline.program, "transform", trLight);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//cube itself
 
-	bindTexture(renderer->texutre);
-
 	//Use shader program when rendering
 	glUseProgram(renderer->rectPipeline.program.id);
 
 	setFloat3(&renderer->rectPipeline.program, "objectColor", float3(1.0f, 0.5f, 0.31f));
-	setFloat3(&renderer->rectPipeline.program, "lightColor", float3(1.0f, 1.0f, 1.0f));
+	setFloat3(&renderer->rectPipeline.program, "lightColor", lightColor);
+	setFloat3(&renderer->rectPipeline.program, "lightPos", lightPos);
 
 	setInt(&renderer->rectPipeline.program, "texture", 1);
 
-	mat4x4 trCube = mat4x4(1.0f);
-	trCube = scale(trCube, float3(0.5, 0.5, 0.5));
-	trCube = rotationZ(trCube, 0.5); 
+	setMat4x4(&renderer->rectPipeline.program, "model", model);
+	setMat4x4(&renderer->rectPipeline.program, "view", view);
 
-	trCube = rotationX(trCube, (float)SDL_GetTicks() * 0.0002);
-	trCube = rotationZ( trCube, (float)SDL_GetTicks() * 0.0002);
+	setMat4x4(&renderer->rectPipeline.program, "projection", projection);
 
-	//// create transformations
-	//glm::mat4 model = glm::mat4(1.0f); // make sure to initialize matrix to identity matrix first
-	//glm::mat4 view = glm::mat4(1.0f);
-	//glm::mat4 projection = glm::mat4(1.0f);
-	//model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	//view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
-	//projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-	//// retrieve the matrix uniform locations
-	//unsigned int modelLoc = glGetUniformLocation(ourShader.ID, "model");
-	//unsigned int viewLoc = glGetUniformLocation(ourShader.ID, "view");
-	//// pass them to the shaders (3 different ways)
-	//glUniformMatrix4fv(modelLoc, 1, GL_FALSE, glm::value_ptr(model));
-	//glUniformMatrix4fv(viewLoc, 1, GL_FALSE, &view[0][0]);
-	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
-	//ourShader.setMat4("projection", projection);
-
-	setMat4x4(&renderer->rectPipeline.program, "transform", trCube);
-	
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	
+
 	//unbinds?
 	//vao unbnd before ebo
 	//glDeleteVertexArrays(1, &VAO);
