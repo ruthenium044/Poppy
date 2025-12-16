@@ -27,11 +27,36 @@ struct ppy_program
 	unsigned int id;
 };
 
+struct VertexLayoutDescElement
+{
+	int size;
+	int type; // I.e., GL_FLOAT or GL_INT
+	bool normalized;
+	int stride;
+	const void* pointer;
+};
+
+enum class DataType
+{
+	BOOL,
+	INT,
+	FLOAT,
+	FLOAT3,
+	MAT4x4,
+};
+
+struct DataTypeBinding
+{
+	DataType type;
+	const char* name;
+	void* ptr;
+};
+
 struct ppy_graphicsPipeline
 {
 	ppy_program program;
 	VertexLayoutDescElement desc[];
-	DataTypeBinding lightBindings[];
+	DataTypeBinding bindings[];
 };
 
 struct ppy_graphicsSpritePipeline
@@ -234,70 +259,11 @@ unsigned int createShader(const char* vertexPath, const char* fragmentPath)
 	return ID;
 }
 
-void setBool(ppy_program* program, const std::string& name, bool value)
-{
-	glUniform1i(glGetUniformLocation(program->id, name.c_str()), (int)value);
-}
+// ==========================================================
+// VBO VAO
+// ==========================================================
 
-void setInt(ppy_program* program, const std::string& name, int value)
-{
-	glUniform1i(glGetUniformLocation(program->id, name.c_str()), value);
-}
-
-void setFloat(ppy_program* program, const std::string& name, float value)
-{
-	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
-}
-
-void setFloat3(ppy_program* program, const std::string& name, float3 value)
-{
-	glUniform3f(glGetUniformLocation(program->id, name.c_str()), value.x, value.y, value.z);
-}
-
-void setMat4x4(ppy_program* program, const std::string& name, mat4x4 value)
-{
-	glUniformMatrix4fv(glGetUniformLocation(program->id, name.c_str()), 1, GL_FALSE, value.elements);
-}
-
-struct VertexLayoutDescElement
-{
-	int type; // I.e., GL_FLOAT or GL_INT
-	int size;
-	int normalized; // ...
-	int stride;
-};
-
-struct VertexLayout
-{
-	unsigned int vao;
-	// ...
-};
-
-static unsigned int CreateVAO(VertexLayoutDescElement* desc, size_t count)
-{
-	// Stores vertex attribute config
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	for (int index = 0; index < count; index++)
-	{
-
-		//move in
-	}
-
-	auto vertexSize = 6;
-
-	// position attribute
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)));
-	glEnableVertexAttribArray(1);
-	return VAO;
-}
-
-static unsigned int GenerateCubeVBO()
+static unsigned int GenerateCubeVBO() //todo this needs to be made once per permutation and given out by need or smthng?
 {
 	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
 	//GL_STATIC_DRAW : the data is set only once and used many times.
@@ -355,6 +321,71 @@ static unsigned int GenerateCubeVBO()
 	return VBO;
 }
 
+static unsigned int CreateVAO(VertexLayoutDescElement* desc, size_t count)
+{
+	// Stores vertex attribute config
+	unsigned int VAO;
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	for(int index = 0; index < count; index++)
+	{
+		glVertexAttribPointer(index, desc.size, desc.type, desc.normalized, desc.stride, desc.pointer);
+		glEnableVertexAttribArray(index);
+	}
+	return VAO;
+}
+
+// ==========================================================
+// Uniforms
+// ==========================================================
+
+void setBool(ppy_program* program, const std::string& name, bool value)
+{
+	glUniform1i(glGetUniformLocation(program->id, name.c_str()), (int)value);
+}
+
+void setInt(ppy_program* program, const std::string& name, int value)
+{
+	glUniform1i(glGetUniformLocation(program->id, name.c_str()), value);
+}
+
+void setFloat(ppy_program* program, const std::string& name, float value)
+{
+	glUniform1f(glGetUniformLocation(program->id, name.c_str()), value);
+}
+
+void setFloat3(ppy_program* program, const std::string& name, float3 value)
+{
+	glUniform3f(glGetUniformLocation(program->id, name.c_str()), value.x, value.y, value.z);
+}
+
+void setMat4x4(ppy_program* program, const std::string& name, mat4x4 value)
+{
+	glUniformMatrix4fv(glGetUniformLocation(program->id, name.c_str()), 1, GL_FALSE, value.elements);
+}
+
+static void setUniform(ppy_graphicsPipeline* pipline, size_t count)
+{
+	for(size_t index = 0; index < count; index++)
+	{
+		DataTypeBinding binding = pipeline.bindings[index];
+		switch (binding.type)
+		{
+		case DataType::BOOL: break;
+			setBool(pipeline.program.id, binding.name, binding.ptr)
+		case DataType::INT: break;
+			setInt(pipeline.program.id, binding.name, binding.ptr)
+		case DataType::FLOAT: break;
+			setFloat(pipeline.program.id, binding.name, binding.ptr)
+		case DataType::FLOAT3: break;
+			setFFloat3(pipeline.program.id, binding.name, binding.ptr)
+		case DataType::MAT4x4: break;
+			setMat4x4(pipeline.program.id, binding.name, binding.ptr)
+		}
+	}
+}
+
 void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
 {
 	if (vertexPath)
@@ -371,11 +402,8 @@ void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nul
 
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
 
-	GenerateCubeVBO();
-
-	CreateVAO(desc, SDL_arraysize(desc));
-
-
+	int VBO = GenerateCubeVBO();
+	int VAO = CreateVAO(pipeline->desc, SDL_arraysize(pipeline->desc));
 }
 
 // ==========================================================
@@ -415,17 +443,19 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 
 	glEnable(GL_DEPTH_TEST);
 
+	constexpr int vertexSize = 6;
+
 	renderer->rectPipeline.desc =
 	{
-		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
-		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
+		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
 	};
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
 
 	renderer->lightPipeline.desc =
 	{
-		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
-		{ GL_FLOAT, 3, GL_FALSE, sizeof(float) * 6},
+		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
+		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
 	};
 	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
 
@@ -437,55 +467,26 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 	return renderer;
 }
 
-enum DataType
+static void createUnifroms(ppy_renderer* renderer)
 {
-	DATA_TYPE_FLOAT3,
-	DATA_TYPE_MAT4x4,
-	DATA_TYPE_INT,
-};
-
-struct DataTypeBinding
-{
-	DataType type;
-	const char* name;
-	void* ptr;
-};
-
-static void whatver(DataTypeBinding* lightBindings, size_t count)
-{
-	for (size_t index = 0; index < count; index++)
-	{
-		DataTypeBinding binding = lightBindings[index];
-		switch (binding.type)
-		{
-		case DATA_TYPE_FLOAT3: break;
-			setFloat3
-		case DATA_TYPE_MAT4x4: break;
-		case DATA_TYPE_INT: break;
-		}
-	}
-
-}
-
-static void drawSprite(ppy_renderer* renderer)
-{
-
+	//LIGHTBULB
 	float3 lightPos = float3(0.6f, 0.5f, 1.0f);
 	float3 lightColor = float3(1.0f, 1.0f, 1.0f);
-
+	
 	mat4x4 trLight = mat4x4(1.0f);
 	trLight = translate(trLight, lightPos);
 	trLight = scale(trLight, float3(0.25, 0.25, 0.25));
-
-	DataTypeBinding lightBindings[] =
-	{
-		{ DATA_TYPE_FLOAT3, "color", &lightColor},
-		{ DATA_TYPE_MAT4x4, "transform", &trLight},
-	};
-
-	//for all stuff
-	whatver(renderer->lightPipeline.lightBindings); //uniforms whatever
 	
+	renderer->lightPipeline.bindings =
+	{
+		{ DataType::FLOAT3, "color", &lightColor },
+		{ DataType::MAT4x4, "transform", &trLight },
+	};
+	
+	//CUBE
+	float3 objectColor = float3(1.0f, 0.5f, 0.31f);
+	int texture = 1;
+
 	mat4x4 model = mat4x4(1.0f);
 	model = scale(model, float3(0.5, 0.5, 0.5));
 	model = rotationX(model, (float)SDL_GetTicks() * 0.0002);
@@ -499,35 +500,30 @@ static void drawSprite(ppy_renderer* renderer)
 	//projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
 
-	//bindTexture(renderer->texutre);
+	renderer->cubeBindings.bindings = {
+		{ DataType::FLOAT3, "objectColor", &objectColor },
+		{ DataType::FLOAT3, "lightColor", &lightColor },
+		{ DataType::FLOAT3, "lightPos", &lightPos },
+		{ DataType::INT, "texture", &texture }, //todo this could be texture binding?
+		{ DataType::MAT4x4, "model", &model },
+		{ DataType::MAT4x4, "view", &view },
+		{ DataType::MAT4x4, "projection", &projection },
+	}
+}
 
-	//lightbulb
-	glUseProgram(renderer->lightPipeline.program.id);
-
-
-	setFloat3(&renderer->lightPipeline.program, "color", lightColor);
-	setMat4x4(&renderer->lightPipeline.program, "transform", trLight);
-
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-
-	//cube itself
+static void drawSprite(ppy_renderer* renderer)
+{
+	createUnifroms();
 
 	//Use shader program when rendering
+	glUseProgram(renderer->lightPipeline.program.id);
+	setUniform(renderer->lightPipeline.lightBindings, SDL_arraysize(lightBindings));
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+	
 	glUseProgram(renderer->rectPipeline.program.id);
-
-	setFloat3(&renderer->rectPipeline.program, "objectColor", float3(1.0f, 0.5f, 0.31f));
-	setFloat3(&renderer->rectPipeline.program, "lightColor", lightColor);
-	setFloat3(&renderer->rectPipeline.program, "lightPos", lightPos);
-
-	setInt(&renderer->rectPipeline.program, "texture", 1);
-
-	setMat4x4(&renderer->rectPipeline.program, "model", model);
-	setMat4x4(&renderer->rectPipeline.program, "view", view);
-
-	setMat4x4(&renderer->rectPipeline.program, "projection", projection);
-
+	//bindTexture(renderer->texutre);
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
-
+	setUniform(renderer->cubeBindings.lightBindings, SDL_arraysize(renderer->cubeBindings.lightBindings));
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//unbinds?
