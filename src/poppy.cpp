@@ -42,7 +42,7 @@ struct LayoutDesc
 struct VertexElement
 {
 	LayoutDesc desc[vertexDescSize];
-	size_t descCount;
+	size_t count;
 };
 
 enum class DataType
@@ -63,8 +63,8 @@ struct UniformBinding
 
 struct BindingElement
 {
-	UniformBinding bindings[bindingSize];
-	size_t bindingsCount;
+	UniformBinding desc[bindingSize];
+	size_t count;
 };
 
 struct ppy_graphicsPipeline
@@ -382,11 +382,11 @@ void setMat4x4(unsigned int programId, const std::string& name, void* value)
 	glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform(ppy_graphicsPipeline* pipeline, size_t count)
+static void setUniform(ppy_graphicsPipeline* pipeline)
 {
-	for(size_t index = 0; index < count; index++)
+	for(size_t index = 0; index < pipeline->binding.count; index++)
 	{
-		UniformBinding binding = pipeline->binding.bindings[index];
+		UniformBinding binding = pipeline->binding.desc[index];
 		switch (binding.type)
 		{
 		case DataType::BOOL: 
@@ -403,6 +403,9 @@ static void setUniform(ppy_graphicsPipeline* pipeline, size_t count)
 			break;
 		case DataType::MAT4x4:
 			setMat4x4(pipeline->program.id, binding.name, binding.ptr);
+			break;
+			default: 
+			SDL_assert( false && "Binding type doesnt exist");
 			break;
 		}
 	}
@@ -425,7 +428,7 @@ void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nul
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
 
 	int VBO = GenerateCubeVBO();
-	int VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.descCount);
+	int VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.count);
 }
 
 // ==========================================================
@@ -472,7 +475,7 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 		.desc ={ { 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
 		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
 		},
-		.descCount = 2,
+		.count = 2,
 	};
 	renderer->rectPipeline.vertexElement = rectDesc;
 	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
@@ -483,7 +486,7 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
 		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
 		},
-		.descCount = 2,
+		.count = 2,
 	};
 	renderer->lightPipeline.vertexElement = lightDesc;
 	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
@@ -499,41 +502,41 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 static void createUnifroms(ppy_renderer* renderer)
 {
 	//LIGHTBULB
-	float3 lightPos = float3(0.6f, 0.5f, 1.0f);
-	float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+	static float3 lightPos = float3(0.6f, 0.5f, 1.0f);
+	static float3 lightColor = float3(1.0f, 1.0f, 1.0f);
 	
-	mat4x4 trLight = mat4x4(1.0f);
+	static mat4x4 trLight = mat4x4(1.0f);
 	trLight = translate(trLight, lightPos);
 	trLight = scale(trLight, float3(0.25, 0.25, 0.25));
 
 	BindingElement lightBindings{
-		.bindings = {
+		.desc = {
 			{ DataType::FLOAT3, "color", &lightColor },
 			{ DataType::MAT4x4, "transform", &trLight },
 		},
-		.bindingsCount = 2
+		.count = 2
 	};
 	renderer->lightPipeline.binding = lightBindings;
 	
 	//CUBE
-	float3 objectColor = float3(1.0f, 0.5f, 0.31f);
-	int texture = 1;
+	static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
+	static int texture = 1;
 
-	mat4x4 model = mat4x4(1.0f);
+	static mat4x4 model = mat4x4(1.0f);
 	model = scale(model, float3(0.5, 0.5, 0.5));
 	model = rotationX(model, (float)SDL_GetTicks() * 0.0002);
 	model = rotationY(model, (float)SDL_GetTicks() * 0.0002);
 
-	mat4x4 view = mat4x4(1.0f);
+	static mat4x4 view = mat4x4(1.0f);
 	//view = translate(view, float3(0.0f, 0.0f, -3.0f));
 
 	//todo
-	mat4x4 projection = mat4x4(1.0f);
+	static mat4x4 projection = mat4x4(1.0f);
 	//projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
 	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
 
 	BindingElement rectBindings{
-		.bindings = 
+		.desc = 
 	{
 		{ DataType::FLOAT3, "objectColor", &objectColor },
 		{ DataType::FLOAT3, "lightColor", &lightColor },
@@ -543,7 +546,7 @@ static void createUnifroms(ppy_renderer* renderer)
 		{ DataType::MAT4x4, "view", &view },
 		{ DataType::MAT4x4, "projection", &projection },
 	},
-	.bindingsCount = 7 
+	.count = 7 
 	};
 	renderer->rectPipeline.binding = rectBindings;
 }
@@ -554,13 +557,13 @@ static void drawSprite(ppy_renderer* renderer)
 
 	//Use shader program when rendering
 	glUseProgram(renderer->lightPipeline.program.id);
-	setUniform(&renderer->lightPipeline, renderer->lightPipeline.binding.bindingsCount);
+	setUniform(&renderer->lightPipeline);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 	
 	glUseProgram(renderer->rectPipeline.program.id);
 	//bindTexture(renderer->texutre);
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
-	setUniform(&renderer->rectPipeline, renderer->rectPipeline.binding.bindingsCount);
+	setUniform(&renderer->rectPipeline);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
 
 	//unbinds?
