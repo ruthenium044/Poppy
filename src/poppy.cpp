@@ -15,6 +15,9 @@
 #define vertexDescSize 8
 #define bindingSize 16
 
+// Todo, make whole binding entry a macro for niceness
+#define nameof(type, member) sizeof(((type *)NULL)->member) ? #member : ""
+
 struct ppy_program
 {
     unsigned int id;
@@ -48,7 +51,7 @@ struct UniformBinding
 {
     DataType type;
     const char *name;
-    void *ptr;
+    size_t offset;
 };
 
 struct BindingElement
@@ -61,24 +64,62 @@ struct ppy_graphicsPipeline
 {
     ppy_program program;
     VertexElement vertexElement;
-    BindingElement binding;
+    BindingElement binding; //todo this out
     unsigned int VBO;
     unsigned int VAO;
+};
+
+struct ppy_graphicsLightPipeline
+{
+    ppy_graphicsPipeline gpuPipeline;
+
+    struct LightUniform
+    {
+        float3 color;
+        mat4x4 transform;
+    };
+    LightUniform uniforms[64];
+    size_t count;
+};
+
+struct ppy_graphicsRectPipeline
+{
+    ppy_graphicsPipeline gpuPipeline;
+
+   struct RectUniform
+    {
+        float3 objectColor;
+        float3 lightColor;
+        float3 lightPos;
+        int32_t texture;
+        mat4x4 model;
+        mat4x4 view;
+        mat4x4 projection;
+    };
+    RectUniform uniforms[64];
+    size_t count;
 };
 
 struct ppy_graphicsSpritePipeline
 {
     ppy_graphicsPipeline gpuPipeline;
-    unsigned int texutres;
+
+    struct SpritePipelineUniform
+    {
+        float3 colour;
+        mat4x4 transform;
+    };
+    SpritePipelineUniform uniforms[64];
+    size_t count;
 };
 
 struct ppy_renderer
 {
     SDL_GLContext glContext;
-    ppy_graphicsPipeline rectPipeline;
-    ppy_graphicsPipeline lightPipeline;
+    ppy_graphicsRectPipeline rectPipeline;
+    ppy_graphicsLightPipeline lightPipeline;
     ppy_graphicsPipeline circlePipeline;
-    ppy_graphicsPipeline spritePipeline;
+    ppy_graphicsSpritePipeline spritePipeline;
 
     unsigned int texutre;
 };
@@ -358,27 +399,30 @@ void setMat4x4(unsigned int programId, const std::string &name, void *value)
     glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform(const ppy_graphicsPipeline *pipeline)
+static void setUniform(unsigned int programId, const BindingElement *bindingElements, void *data)
 {
-    for(size_t index = 0; index < pipeline->binding.count; index++)
+    char *bytes = (char *)data;
+
+    for(size_t bindingIndex = 0; bindingIndex < bindingElements->count; bindingIndex++)
     {
-        const UniformBinding binding = pipeline->binding.desc[index];
+        const UniformBinding binding = bindingElements->desc[bindingIndex];
+        char *dataAt = bytes + (size_t)binding.offset;
         switch(binding.type)
         {
         case DataType::BOOL:
-            setBool(pipeline->program.id, binding.name, binding.ptr);
+            setBool(programId, binding.name, dataAt);
             break;
         case DataType::INT:
-            setInt(pipeline->program.id, binding.name, binding.ptr);
+            setInt(programId, binding.name, dataAt);
             break;
         case DataType::FLOAT:
-            setFloat(pipeline->program.id, binding.name, binding.ptr);
+            setFloat(programId, binding.name, dataAt);
             break;
         case DataType::FLOAT3:
-            setFloat3(pipeline->program.id, binding.name, binding.ptr);
+            setFloat3(programId, binding.name, dataAt);
             break;
         case DataType::MAT4x4:
-            setMat4x4(pipeline->program.id, binding.name, binding.ptr);
+            setMat4x4(programId, binding.name, dataAt);
             break;
         default:
             SDL_assert(false && "Binding type doesnt exist");
@@ -455,8 +499,8 @@ ppy_renderer *rendererCreate(SDL_Window *window)
             },
         .count = 2,
     };
-    renderer->rectPipeline.vertexElement = rectDesc;
-    createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/triangle.vs",
+    renderer->rectPipeline.gpuPipeline.vertexElement = rectDesc;
+    createPipeline(&renderer->rectPipeline.gpuPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/triangle.vs",
                    GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/triangle.fs");
 
     VertexElement lightDesc = {
@@ -467,15 +511,15 @@ ppy_renderer *rendererCreate(SDL_Window *window)
             },
         .count = 2,
     };
-    renderer->lightPipeline.vertexElement = lightDesc;
-    createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.vs",
+    renderer->lightPipeline.gpuPipeline.vertexElement = lightDesc;
+    createPipeline(&renderer->lightPipeline.gpuPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.vs",
                    GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.fs");
 
     memset(&renderer->circlePipeline, 0, sizeof(renderer->circlePipeline));
     createPipeline(&renderer->circlePipeline);
 
     memset(&renderer->spritePipeline, 0, sizeof(renderer->spritePipeline));
-    createPipeline(&renderer->spritePipeline);
+    createPipeline(&renderer->spritePipeline.gpuPipeline);
 
     renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH "/assets/textures/demon.png");
 
@@ -497,12 +541,12 @@ static void createUnifroms(ppy_renderer *renderer)
     BindingElement lightBindings{
         .desc =
             {
-                {DataType::FLOAT3, "color", &lightColor},
-                {DataType::MAT4x4, "transform", &trLight},
+                {DataType::FLOAT3, "color", offsetof(ppy_graphicsLightPipeline::LightUniform, color)},
+                {DataType::MAT4x4, "transform", offsetof(ppy_graphicsLightPipeline::LightUniform, transform)},
             },
         .count = 2,
     };
-    renderer->lightPipeline.binding = lightBindings;
+    renderer->lightPipeline.gpuPipeline.binding = lightBindings;
 
     // CUBE
     static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
@@ -527,37 +571,74 @@ static void createUnifroms(ppy_renderer *renderer)
     BindingElement rectBindings{
         .desc =
             {
-                {DataType::FLOAT3, "objectColor", &objectColor},
-                {DataType::FLOAT3, "lightColor", &lightColor},
-                {DataType::FLOAT3, "lightPos", &lightPos},
-                {DataType::INT, "texture", &texture}, // todo this could be texture binding?
-                {DataType::MAT4x4, "model", &model},
-                {DataType::MAT4x4, "view", &view},
-                {DataType::MAT4x4, "projection", &projection},
+                {DataType::FLOAT3, "objectColor", offsetof(ppy_graphicsRectPipeline::RectUniform, objectColor)},
+                {DataType::FLOAT3, "lightColor", offsetof(ppy_graphicsRectPipeline::RectUniform, lightColor)},
+                {DataType::FLOAT3, "lightPos", offsetof(ppy_graphicsRectPipeline::RectUniform, lightPos)},
+                {DataType::INT, "texture", offsetof(ppy_graphicsRectPipeline::RectUniform, texture)}, // todo texture binding?
+                {DataType::MAT4x4, "model", offsetof(ppy_graphicsRectPipeline::RectUniform, model)},
+                {DataType::MAT4x4, "view", offsetof(ppy_graphicsRectPipeline::RectUniform, view)},
+                {DataType::MAT4x4, "projection", offsetof(ppy_graphicsRectPipeline::RectUniform, projection)},
             },
         .count = 7,
     };
-    renderer->rectPipeline.binding = rectBindings;
-}
-
-static void drawProgram(const ppy_graphicsPipeline *pipeline)
-{
-    glUseProgram(pipeline->program.id);
-    glBindVertexArray(pipeline->VAO);
-
-    // todo is this needed here?
-    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
-
-    setUniform(pipeline);
-    glDrawArrays(GL_TRIANGLES, 0, 36);
+    renderer->rectPipeline.gpuPipeline.binding = rectBindings;
 }
 
 static void drawSprite(ppy_renderer *renderer)
 {
-    createUnifroms(renderer);
+    createUniforms(renderer);
 
-    drawProgram(&renderer->lightPipeline);
-    drawProgram(&renderer->rectPipeline);
+    float3 lightPos = float3(0.6f, 0.5f, -1.0f);
+    float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+
+    mat4x4 newTrLight = mat4x4(1.0f);
+    newTrLight = translate(newTrLight, lightPos);
+    newTrLight = scale(newTrLight, float3(0.25, 0.25, 0.25));
+
+    mat4x4 trLight = newTrLight;
+
+    // CUBE
+    float3 objectColor = float3(1.0f, 0.5f, 0.31f);
+    int texture = 1;
+
+    mat4x4 newModel = mat4x4(1.0f);
+    newModel = scale(newModel, float3(0.5, 0.5, 0.5));
+    newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
+    newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
+
+    mat4x4 model = newModel;
+    mat4x4 view = mat4x4(1.0f);
+    mat4x4 projection = mat4x4(1.0f);
+
+    ppy_graphicsLightPipeline::LightUniform lightElement = {
+        .color = lightColor,
+        .transform = trLight,
+    };
+    ppy_graphicsRectPipeline::RectUniform rectElement = {
+        .objectColor = objectColor,
+        .lightColor = lightColor,
+        .lightPos = lightPos,
+        .texture = texture,
+        .model = model,
+        .view = view,
+        .projection = projection,
+    };
+
+    //light
+    glUseProgram(renderer->lightPipeline.gpuPipeline.program.id);
+    glBindVertexArray(renderer->lightPipeline.gpuPipeline.VAO);
+    setUniform(renderer->lightPipeline.gpuPipeline.program.id, &renderer->lightPipeline.gpuPipeline.binding, &lightElement);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    //rect
+    glUseProgram(renderer->rectPipeline.gpuPipeline.program.id);
+    glBindVertexArray(renderer->rectPipeline.gpuPipeline.VAO);
+
+    // todo is this needed here?
+    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
+
+    setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.binding, &rectElement);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // todo check if texture ever works again lol
     bindTexture(renderer->texutre);
