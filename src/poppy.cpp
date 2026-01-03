@@ -550,28 +550,30 @@ static void createUnifroms(ppy_renderer* renderer)
 	renderer->rectPipeline.binding = rectBindings;
 }
 
+
+static void drawProgram( const ppy_graphicsPipeline* pipeline )
+{
+	glUseProgram(pipeline->program.id );
+	glBindVertexArray(pipeline->VAO );
+
+	//todo is this needed here?
+	//glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
+
+	setUniform( pipeline );
+	glDrawArrays( GL_TRIANGLES, 0, 36 );
+}
+
 static void drawSprite(ppy_renderer* renderer)
 {
 	createUnifroms(renderer);
 
-	//Light
-	glUseProgram(renderer->lightPipeline.program.id);
-	glBindVertexArray(renderer->lightPipeline.VAO);
-	setUniform(&renderer->lightPipeline);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+	drawProgram( &renderer->lightPipeline );
+	drawProgram(&renderer->rectPipeline);
 
-	//Rect
-	glUseProgram(renderer->rectPipeline.program.id);
-	glBindVertexArray(renderer->rectPipeline.VAO);
-	//todo is this needed here?
-	//glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
-
+	//todo check if texture ever works again lol
 	bindTexture(renderer->texutre);
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
-	setUniform(&renderer->rectPipeline);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
-	
 	glBindVertexArray(0);
 
 	//unbinds?
