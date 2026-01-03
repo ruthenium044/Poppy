@@ -15,16 +15,6 @@
 #define vertexDescSize 8
 #define bindingSize 16
 
-struct ppy_buffer
-{
-
-};
-
-struct ppy_shader
-{
-
-};
-
 struct ppy_program
 {
 	unsigned int id;
@@ -72,6 +62,8 @@ struct ppy_graphicsPipeline
 	ppy_program program;
 	VertexElement vertexElement;
 	BindingElement binding;
+	unsigned int VBO;
+	unsigned int VAO;
 };
 
 struct ppy_graphicsSpritePipeline
@@ -336,7 +328,7 @@ static unsigned int GenerateCubeVBO() //todo this needs to be made once per perm
 	return VBO;
 }
 
-static unsigned int CreateVAO(LayoutDesc* desc, size_t count)
+static unsigned int CreateVAO( const LayoutDesc* desc, size_t count)
 {
 	// Stores vertex attribute config
 	unsigned int VAO;
@@ -382,11 +374,11 @@ void setMat4x4(unsigned int programId, const std::string& name, void* value)
 	glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform(ppy_graphicsPipeline* pipeline)
+static void setUniform( const ppy_graphicsPipeline* pipeline)
 {
 	for(size_t index = 0; index < pipeline->binding.count; index++)
 	{
-		UniformBinding binding = pipeline->binding.desc[index];
+		const UniformBinding binding = pipeline->binding.desc[index];
 		switch (binding.type)
 		{
 		case DataType::BOOL: 
@@ -427,8 +419,8 @@ void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nul
 
 	pipeline->program.id = createShader(vertexPath, fragmentPath);
 
-	int VBO = GenerateCubeVBO();
-	int VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.count);
+	pipeline->VBO = GenerateCubeVBO();
+	pipeline->VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.count);
 }
 
 // ==========================================================
@@ -491,7 +483,10 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 	renderer->lightPipeline.vertexElement = lightDesc;
 	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
 
+	memset(&renderer->circlePipeline, 0, sizeof(renderer->circlePipeline));
 	createPipeline(&renderer->circlePipeline);
+
+	memset(&renderer->spritePipeline, 0, sizeof(renderer->spritePipeline));
 	createPipeline(&renderer->spritePipeline);
 
 	renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
@@ -502,12 +497,14 @@ ppy_renderer* rendererCreate(SDL_Window* window)
 static void createUnifroms(ppy_renderer* renderer)
 {
 	//LIGHTBULB
-	static float3 lightPos = float3(0.6f, 0.5f, 1.0f);
+	static float3 lightPos = float3(0.6f, 0.5f, -1.0f);
 	static float3 lightColor = float3(1.0f, 1.0f, 1.0f);
 	
-	static mat4x4 trLight = mat4x4(1.0f);
-	trLight = translate(trLight, lightPos);
-	trLight = scale(trLight, float3(0.25, 0.25, 0.25));
+	mat4x4 newTrLight = mat4x4(1.0f);
+	newTrLight = translate(newTrLight, lightPos);
+	newTrLight = scale(newTrLight, float3(0.25, 0.25, 0.25));
+
+	static mat4x4 trLight = newTrLight;
 
 	BindingElement lightBindings{
 		.desc = {
@@ -522,10 +519,12 @@ static void createUnifroms(ppy_renderer* renderer)
 	static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
 	static int texture = 1;
 
-	static mat4x4 model = mat4x4(1.0f);
-	model = scale(model, float3(0.5, 0.5, 0.5));
-	model = rotationX(model, (float)SDL_GetTicks() * 0.0002);
-	model = rotationY(model, (float)SDL_GetTicks() * 0.0002);
+	mat4x4 newModel = mat4x4(1.0f);
+	newModel = scale(newModel, float3(0.5, 0.5, 0.5));
+	newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
+	newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
+
+	static mat4x4 model = newModel;
 
 	static mat4x4 view = mat4x4(1.0f);
 	//view = translate(view, float3(0.0f, 0.0f, -3.0f));
@@ -555,16 +554,25 @@ static void drawSprite(ppy_renderer* renderer)
 {
 	createUnifroms(renderer);
 
-	//Use shader program when rendering
+	//Light
 	glUseProgram(renderer->lightPipeline.program.id);
+	glBindVertexArray(renderer->lightPipeline.VAO);
 	setUniform(&renderer->lightPipeline);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
-	
+
+	//Rect
 	glUseProgram(renderer->rectPipeline.program.id);
-	//bindTexture(renderer->texutre);
+	glBindVertexArray(renderer->rectPipeline.VAO);
+	//todo is this needed here?
+	//glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
+
+	bindTexture(renderer->texutre);
 	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
+
 	setUniform(&renderer->rectPipeline);
 	glDrawArrays(GL_TRIANGLES, 0, 36);
+	
+	glBindVertexArray(0);
 
 	//unbinds?
 	//vao unbnd before ebo
