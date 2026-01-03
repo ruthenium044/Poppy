@@ -2,14 +2,12 @@
 
 struct float3
 {
-    float x = 0.0f; //make rgb and uv somehow
+    float x = 0.0f; // make rgb and uv somehow
     float y = 0.0f;
     float z = 0.0f;
 
-    float3(float x, float y, float z)
-        : x(x), y(y), z(z)
+    float3(float x, float y, float z) : x(x), y(y), z(z)
     {
-
     }
 
     float3 operator+(float3 vec)
@@ -29,32 +27,31 @@ struct float3
         return float3(x / vec.x, y / vec.y, z / vec.z);
     }
 
-    //add operator access
-    //add other operators idk what
-    //add assigments
+    // add operator access
+    // add other operators idk what
+    // add assigments
 
     float length()
     {
-        //sqrt of dot?
+        // sqrt of dot?
     }
 
     float lengthSqrt()
     {
-
     }
 
     float3 normialize()
     {
-        //might be smthng with operators
-        //this / length()
+        // might be smthng with operators
+        // this / length()
     }
 
-    //rot and angles
+    // rot and angles
 };
 
-//scalar mul
+// scalar mul
 
-float3 mul( float s, float3 vec)
+float3 mul(float s, float3 vec)
 {
     return float3(s * vec.x, s * vec.y, s * vec.z);
 }
@@ -79,12 +76,11 @@ float isPerpendicular(float3 u, float3 v)
 
 float isParallel(float3 u, float3 v)
 {
-    float dot = 0.0f;//dot(u, v);
+    float dot = 0.0f; // dot(u, v);
     return dot == 1.0f || dot == -1;
 }
 
-void print( float3 vec )
+void print(float3 vec)
 {
     std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
 }
-

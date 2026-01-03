@@ -4,83 +4,83 @@
 #include <SDL3/SDL.h>
 #include <SDL3_image/SDL_image.h>
 
+#include "float3.h"
+#include "mat4x4.h"
+#include <filesystem>
+#include <fstream>
 #include <glad/glad.h>
 #include <iostream>
 #include <sstream>
-#include <fstream>
-#include <filesystem>
-#include "float3.h"
-#include "mat4x4.h"
 
 #define vertexDescSize 8
 #define bindingSize 16
 
 struct ppy_program
 {
-	unsigned int id;
+    unsigned int id;
 };
 
 struct LayoutDesc
 {
-	int size;
-	int type; // I.e., GL_FLOAT or GL_INT
-	bool normalized;
-	int stride;
-	const void* pointer;
+    int size;
+    int type; // I.e., GL_FLOAT or GL_INT
+    bool normalized;
+    int stride;
+    const void *pointer;
 };
 
 struct VertexElement
 {
-	LayoutDesc desc[vertexDescSize];
-	size_t count;
+    LayoutDesc desc[vertexDescSize];
+    size_t count;
 };
 
 enum class DataType
 {
-	BOOL,
-	INT,
-	FLOAT,
-	FLOAT3,
-	MAT4x4,
+    BOOL,
+    INT,
+    FLOAT,
+    FLOAT3,
+    MAT4x4,
 };
 
 struct UniformBinding
 {
-	DataType type;
-	const char* name;
-	void* ptr;
+    DataType type;
+    const char *name;
+    void *ptr;
 };
 
 struct BindingElement
 {
-	UniformBinding desc[bindingSize];
-	size_t count;
+    UniformBinding desc[bindingSize];
+    size_t count;
 };
 
 struct ppy_graphicsPipeline
 {
-	ppy_program program;
-	VertexElement vertexElement;
-	BindingElement binding;
-	unsigned int VBO;
-	unsigned int VAO;
+    ppy_program program;
+    VertexElement vertexElement;
+    BindingElement binding;
+    unsigned int VBO;
+    unsigned int VAO;
 };
 
 struct ppy_graphicsSpritePipeline
 {
-	ppy_graphicsPipeline gpuPipeline;
-	unsigned int texutres;
+    ppy_graphicsPipeline gpuPipeline;
+    unsigned int texutres;
 };
 
 struct ppy_renderer
 {
-	SDL_GLContext glContext;
-	ppy_graphicsPipeline rectPipeline;
-	ppy_graphicsPipeline lightPipeline;
-	ppy_graphicsPipeline circlePipeline;
-	ppy_graphicsPipeline spritePipeline;
+    SDL_GLContext glContext;
+    ppy_graphicsPipeline rectPipeline;
+    ppy_graphicsPipeline lightPipeline;
+    ppy_graphicsPipeline circlePipeline;
+    ppy_graphicsPipeline spritePipeline;
 
-	unsigned int texutre;
+    unsigned int texutre;
 };
 
 // ==========================================================
@@ -89,555 +89,539 @@ struct ppy_renderer
 
 void bindTexture(unsigned int texture)
 {
-	glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, texture);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, texture);
 }
 
-unsigned int loadImage(const char* path)
+unsigned int loadImage(const char *path)
 {
-	SDL_Surface* surface = IMG_Load(path);
-	if (!surface)
-	{
-		std::cerr << "Failed to load image: " << std::endl;
-		return 0;
-	}
+    SDL_Surface *surface = IMG_Load(path);
+    if(!surface)
+    {
+        std::cerr << "Failed to load image: " << std::endl;
+        return 0;
+    }
 
-	SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
+    SDL_FlipSurface(surface, SDL_FLIP_VERTICAL);
 
-	GLuint texture;
-	glGenTextures(1, &texture);
-	glBindTexture(GL_TEXTURE_2D, texture);
+    GLuint texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-	glGenerateMipmap(GL_TEXTURE_2D);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0, GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glGenerateMipmap(GL_TEXTURE_2D);
 
-	SDL_DestroySurface(surface);
+    SDL_DestroySurface(surface);
 
-	return texture;
+    return texture;
 }
 
 void checkCompileErrors(unsigned int shader, std::string type)
 {
-	int success;
-	char infoLog[1024];
-	if (type != "PROGRAM")
-	{
-		glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-		if (!success)
-		{
-			glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-			std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-		}
-	}
-	else
-	{
-		glGetProgramiv(shader, GL_LINK_STATUS, &success);
-		if (!success)
-		{
-			glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-			std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
-		}
-	}
+    int success;
+    char infoLog[1024];
+    if(type != "PROGRAM")
+    {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if(!success)
+        {
+            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "ERROR::SHADER_COMPILATION_ERROR of type: " << type << "\n"
+                      << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
+    else
+    {
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if(!success)
+        {
+            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
+            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type: " << type << "\n"
+                      << infoLog << "\n -- --------------------------------------------------- -- " << std::endl;
+        }
+    }
 }
 
-static void compileShader(unsigned int shader, const char* shaderSource)
+static void compileShader(unsigned int shader, const char *shaderSource)
 {
-	glShaderSource(shader, 1, &shaderSource, NULL);
-	glCompileShader(shader);
-	checkCompileErrors(shader, "SHADER");
+    glShaderSource(shader, 1, &shaderSource, NULL);
+    glCompileShader(shader);
+    checkCompileErrors(shader, "SHADER");
 
-	int  success;
-	char infoLog[512];
-	glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+    int success;
+    char infoLog[512];
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
 
-	if (!success)
-	{
-		glGetShaderInfoLog(shader, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
+    if(!success)
+    {
+        glGetShaderInfoLog(shader, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
 }
 
 unsigned int createProgram(unsigned int shaders[], int count)
 {
-	unsigned int shaderProgram = glCreateProgram();
+    unsigned int shaderProgram = glCreateProgram();
 
-	for (int i = 0; i < count; i++)
-	{
-		glAttachShader(shaderProgram, shaders[i]);
-	}
-	glLinkProgram(shaderProgram);
-	checkCompileErrors(shaderProgram, "PROGRAM");
+    for(int i = 0; i < count; i++)
+    {
+        glAttachShader(shaderProgram, shaders[i]);
+    }
+    glLinkProgram(shaderProgram);
+    checkCompileErrors(shaderProgram, "PROGRAM");
 
-	int  success;
-	char infoLog[512];
-	glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &success);
+    int success;
+    char infoLog[512];
+    glGetShaderiv(shaderProgram, GL_COMPILE_STATUS, &success);
 
-	if (!success)
-	{
-		glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
-		std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
-	}
+    if(!success)
+    {
+        glGetProgramInfoLog(shaderProgram, 512, NULL, infoLog);
+        std::cout << "ERROR::SHADER::COMPILATION_FAILED\n" << infoLog << std::endl;
+    }
 
-	for (int i = 0; i < count; i++)
-	{
-		glDeleteShader(shaders[i]);
-	}
+    for(int i = 0; i < count; i++)
+    {
+        glDeleteShader(shaders[i]);
+    }
 
-	return shaderProgram;
+    return shaderProgram;
 }
 
-static void CompileAndLinkShaders(unsigned int& shaderProgram, const char* vertexShaderSource, const char* fragmentShaderSource)
+static void CompileAndLinkShaders(unsigned int &shaderProgram, const char *vertexShaderSource,
+                                  const char *fragmentShaderSource)
 {
-	//Create and compile shaders
-	int legth = 0;
-	unsigned int shaders[2] = { 0, 0 };
-	if (vertexShaderSource)
-	{
-		unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); //create shadre of type
-		compileShader(vertexShader, vertexShaderSource);
-		shaders[0] = vertexShader;
-		legth++;
-	}
+    // Create and compile shaders
+    int legth = 0;
+    unsigned int shaders[2] = {0, 0};
+    if(vertexShaderSource)
+    {
+        unsigned int vertexShader = glCreateShader(GL_VERTEX_SHADER); // create shadre of type
+        compileShader(vertexShader, vertexShaderSource);
+        shaders[0] = vertexShader;
+        legth++;
+    }
 
-	if (fragmentShaderSource)
-	{
-		unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-		compileShader(fragmentShader, fragmentShaderSource);
-		shaders[1] = fragmentShader;
-		legth++;
-	}
+    if(fragmentShaderSource)
+    {
+        unsigned int fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+        compileShader(fragmentShader, fragmentShaderSource);
+        shaders[1] = fragmentShader;
+        legth++;
+    }
 
-	//Create and link shader programs
-	if (legth > 0)
-	{
-		shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
-	}
+    // Create and link shader programs
+    if(legth > 0)
+    {
+        shaderProgram = createProgram(shaders, SDL_arraysize(shaders));
+    }
 }
 
-unsigned int createShader(const char* vertexPath, const char* fragmentPath)
+unsigned int createShader(const char *vertexPath, const char *fragmentPath)
 {
-	std::ifstream vertexFile;
-	std::ifstream shaderFile;
+    std::ifstream vertexFile;
+    std::ifstream shaderFile;
 
-	const char* vertexCode = nullptr;
-	std::string vertexStream;
+    const char *vertexCode = nullptr;
+    std::string vertexStream;
 
-	const char* fragmentCode = nullptr;
-	std::string fragmentStream;
+    const char *fragmentCode = nullptr;
+    std::string fragmentStream;
 
-	//todo func these
-	if (vertexPath)
-	{
-		vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		vertexFile.open(vertexPath);
+    // todo func these
+    if(vertexPath)
+    {
+        vertexFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        vertexFile.open(vertexPath);
 
-		std::stringstream vShaderStream;
-		vShaderStream << vertexFile.rdbuf();
+        std::stringstream vShaderStream;
+        vShaderStream << vertexFile.rdbuf();
 
-		vertexFile.close();
+        vertexFile.close();
 
-		vertexStream = vShaderStream.str();
-		vertexCode = vertexStream.c_str();
-	}
+        vertexStream = vShaderStream.str();
+        vertexCode = vertexStream.c_str();
+    }
 
-	if (fragmentPath)
-	{
-		shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
-		shaderFile.open(fragmentPath);
+    if(fragmentPath)
+    {
+        shaderFile.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+        shaderFile.open(fragmentPath);
 
-		std::stringstream fShaderStream;
-		fShaderStream << shaderFile.rdbuf();
+        std::stringstream fShaderStream;
+        fShaderStream << shaderFile.rdbuf();
 
-		shaderFile.close();
+        shaderFile.close();
 
-		fragmentStream = fShaderStream.str();
-		fragmentCode = fragmentStream.c_str();
-	}
+        fragmentStream = fShaderStream.str();
+        fragmentCode = fragmentStream.c_str();
+    }
 
-	//todo pass in array??
-	unsigned int ID;
-	CompileAndLinkShaders(ID, vertexCode, fragmentCode);
-	return ID;
+    // todo pass in array??
+    unsigned int ID;
+    CompileAndLinkShaders(ID, vertexCode, fragmentCode);
+    return ID;
 }
 
 // ==========================================================
 // VBO VAO
 // ==========================================================
 
-static unsigned int GenerateCubeVBO() //todo this needs to be made once per permutation and given out by need or smthng?
+static unsigned int GenerateCubeVBO() // todo this needs to be made once per permutation and given out by need or
+                                      // smthng?
 {
-	//GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-	//GL_STATIC_DRAW : the data is set only once and used many times.
-	//GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
+    // GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+    // GL_STATIC_DRAW : the data is set only once and used many times.
+    // GL_DYNAMIC_DRAW : the data is changed a lot and used many times.
 
-	float vertices[] = {
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f,  0.0f, -1.0f,
+    float vertices[] = {-0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f, 0.5f,  -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f,
+                        0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, 0.5f,  0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f,
+                        -0.5f, 0.5f,  -0.5f, 0.0f,  0.0f,  -1.0f, -0.5f, -0.5f, -0.5f, 0.0f,  0.0f,  -1.0f,
 
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+                        -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,
+                        0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  0.5f,  0.5f,  0.5f,  0.0f,  0.0f,  1.0f,
+                        -0.5f, 0.5f,  0.5f,  0.0f,  0.0f,  1.0f,  -0.5f, -0.5f, 0.5f,  0.0f,  0.0f,  1.0f,
 
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f, -1.0f,  0.0f,  0.0f,
+                        -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, -1.0f, 0.0f,  0.0f,
+                        -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,  -0.5f, -0.5f, -0.5f, -1.0f, 0.0f,  0.0f,
+                        -0.5f, -0.5f, 0.5f,  -1.0f, 0.0f,  0.0f,  -0.5f, 0.5f,  0.5f,  -1.0f, 0.0f,  0.0f,
 
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
+                        0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 1.0f,  0.0f,  0.0f,
+                        0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,  0.5f,  -0.5f, -0.5f, 1.0f,  0.0f,  0.0f,
+                        0.5f,  -0.5f, 0.5f,  1.0f,  0.0f,  0.0f,  0.5f,  0.5f,  0.5f,  1.0f,  0.0f,  0.0f,
 
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		 0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f,  0.5f,  0.0f, -1.0f,  0.0f,
-		-0.5f, -0.5f, -0.5f,  0.0f, -1.0f,  0.0f,
+                        -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,
+                        0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  0.5f,  -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,
+                        -0.5f, -0.5f, 0.5f,  0.0f,  -1.0f, 0.0f,  -0.5f, -0.5f, -0.5f, 0.0f,  -1.0f, 0.0f,
 
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		 0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
-		-0.5f,  0.5f, -0.5f,  0.0f,  1.0f,  0.0f
-	};
+                        -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  -0.5f, 0.0f,  1.0f,  0.0f,
+                        0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  0.5f,  0.5f,  0.5f,  0.0f,  1.0f,  0.0f,
+                        -0.5f, 0.5f,  0.5f,  0.0f,  1.0f,  0.0f,  -0.5f, 0.5f,  -0.5f, 0.0f,  1.0f,  0.0f};
 
-	//VBO
-	unsigned int VBO;
-	glGenBuffers(1, &VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-	return VBO;
+    // VBO
+    unsigned int VBO;
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+    return VBO;
 }
 
-static unsigned int CreateVAO( const LayoutDesc* desc, size_t count)
+static unsigned int CreateVAO(const LayoutDesc *desc, size_t count)
 {
-	// Stores vertex attribute config
-	unsigned int VAO;
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
+    // Stores vertex attribute config
+    unsigned int VAO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
-	for(int index = 0; index < count; index++)
-	{
-		glVertexAttribPointer(index, desc->size, desc->type, desc->normalized, desc->stride, desc->pointer);
-		glEnableVertexAttribArray(index);
-	}
-	return VAO;
+    for(int index = 0; index < count; index++)
+    {
+        glVertexAttribPointer(index, desc->size, desc->type, desc->normalized, desc->stride, desc->pointer);
+        glEnableVertexAttribArray(index);
+    }
+    return VAO;
 }
 
 // ==========================================================
 // Uniforms
 // ==========================================================
 
-void setBool(unsigned int programId, const std::string& name, void* value)
+void setBool(unsigned int programId, const std::string &name, void *value)
 {
-	glUniform1i(glGetUniformLocation(programId, name.c_str()), *(int*)value);
+    glUniform1i(glGetUniformLocation(programId, name.c_str()), *(int *)value);
 }
 
-void setInt(unsigned int programId, const std::string& name, void* value)
+void setInt(unsigned int programId, const std::string &name, void *value)
 {
-	glUniform1i(glGetUniformLocation(programId, name.c_str()), *(int*)value);
+    glUniform1i(glGetUniformLocation(programId, name.c_str()), *(int *)value);
 }
 
-void setFloat(unsigned int programId, const std::string& name, void* value)
+void setFloat(unsigned int programId, const std::string &name, void *value)
 {
-	glUniform1f(glGetUniformLocation(programId, name.c_str()), *(float*)value);
+    glUniform1f(glGetUniformLocation(programId, name.c_str()), *(float *)value);
 }
 
-void setFloat3(unsigned int programId, const std::string& name, void* value)
+void setFloat3(unsigned int programId, const std::string &name, void *value)
 {
-	float3 valueFloat3 = *(float3*) value;
-	glUniform3f(glGetUniformLocation(programId, name.c_str()), valueFloat3.x, valueFloat3.y, valueFloat3.z);
+    float3 valueFloat3 = *(float3 *)value;
+    glUniform3f(glGetUniformLocation(programId, name.c_str()), valueFloat3.x, valueFloat3.y, valueFloat3.z);
 }
 
-void setMat4x4(unsigned int programId, const std::string& name, void* value)
+void setMat4x4(unsigned int programId, const std::string &name, void *value)
 {
-	mat4x4 valueMat4x4 = *(mat4x4*) value;
-	glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
+    mat4x4 valueMat4x4 = *(mat4x4 *)value;
+    glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform( const ppy_graphicsPipeline* pipeline)
+static void setUniform(const ppy_graphicsPipeline *pipeline)
 {
-	for(size_t index = 0; index < pipeline->binding.count; index++)
-	{
-		const UniformBinding binding = pipeline->binding.desc[index];
-		switch (binding.type)
-		{
-		case DataType::BOOL: 
-			setBool(pipeline->program.id, binding.name, binding.ptr);
-			break;
-		case DataType::INT: 
-			setInt(pipeline->program.id, binding.name, binding.ptr);
-			break;
-		case DataType::FLOAT:
-			setFloat(pipeline->program.id, binding.name, binding.ptr);
-			break;
-		case DataType::FLOAT3:
-			setFloat3(pipeline->program.id, binding.name, binding.ptr);
-			break;
-		case DataType::MAT4x4:
-			setMat4x4(pipeline->program.id, binding.name, binding.ptr);
-			break;
-			default: 
-			SDL_assert( false && "Binding type doesnt exist");
-			break;
-		}
-	}
+    for(size_t index = 0; index < pipeline->binding.count; index++)
+    {
+        const UniformBinding binding = pipeline->binding.desc[index];
+        switch(binding.type)
+        {
+        case DataType::BOOL:
+            setBool(pipeline->program.id, binding.name, binding.ptr);
+            break;
+        case DataType::INT:
+            setInt(pipeline->program.id, binding.name, binding.ptr);
+            break;
+        case DataType::FLOAT:
+            setFloat(pipeline->program.id, binding.name, binding.ptr);
+            break;
+        case DataType::FLOAT3:
+            setFloat3(pipeline->program.id, binding.name, binding.ptr);
+            break;
+        case DataType::MAT4x4:
+            setMat4x4(pipeline->program.id, binding.name, binding.ptr);
+            break;
+        default:
+            SDL_assert(false && "Binding type doesnt exist");
+            break;
+        }
+    }
 }
 
-void createPipeline(ppy_graphicsPipeline* pipeline, const char* vertexPath = nullptr, const char* fragmentPath = nullptr)
+void createPipeline(ppy_graphicsPipeline *pipeline, const char *vertexPath = nullptr,
+                    const char *fragmentPath = nullptr)
 {
-	if (vertexPath)
-	{
-		bool vsExists = std::filesystem::exists(vertexPath);
-		SDL_assert(vsExists && "Shader file does not exist");
-	}
+    if(vertexPath)
+    {
+        bool vsExists = std::filesystem::exists(vertexPath);
+        SDL_assert(vsExists && "Shader file does not exist");
+    }
 
-	if (fragmentPath)
-	{
-		bool fExists = std::filesystem::exists(fragmentPath);
-		SDL_assert(fExists && "Shader file does not exist");
-	}
+    if(fragmentPath)
+    {
+        bool fExists = std::filesystem::exists(fragmentPath);
+        SDL_assert(fExists && "Shader file does not exist");
+    }
 
-	pipeline->program.id = createShader(vertexPath, fragmentPath);
+    pipeline->program.id = createShader(vertexPath, fragmentPath);
 
-	pipeline->VBO = GenerateCubeVBO();
-	pipeline->VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.count);
+    pipeline->VBO = GenerateCubeVBO();
+    pipeline->VAO = CreateVAO(pipeline->vertexElement.desc, pipeline->vertexElement.count);
 }
 
 // ==========================================================
 // API
 // ==========================================================
 
-ppy_renderer* rendererCreate(SDL_Window* window)
+ppy_renderer *rendererCreate(SDL_Window *window)
 {
-	ppy_renderer* renderer = (ppy_renderer*)SDL_malloc(sizeof(*renderer));
+    ppy_renderer *renderer = (ppy_renderer *)SDL_malloc(sizeof(*renderer));
 
-	// Set OpenGL attributes
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+    // Set OpenGL attributes
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 
-	// Create an OpenGL context
-	renderer->glContext = SDL_GL_CreateContext(window);
+    // Create an OpenGL context
+    renderer->glContext = SDL_GL_CreateContext(window);
 
-	if (renderer->glContext == nullptr)
-	{
-		std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
-		SDL_Quit();
-		return nullptr;
-	}
+    if(renderer->glContext == nullptr)
+    {
+        std::cerr << "SDL_GL_CreateContext Error: " << SDL_GetError() << std::endl;
+        SDL_Quit();
+        return nullptr;
+    }
 
-	// Initialise GLAD
-	if (!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
-	{
-		std::cerr << "Failed to initialize GLAD" << std::endl;
-		SDL_Quit();
-		return nullptr;
-	}
-	int windowWidth, windowHeight;
-	SDL_GetWindowSize(window, &windowWidth, &windowHeight);
+    // Initialise GLAD
+    if(!gladLoadGLLoader((GLADloadproc)SDL_GL_GetProcAddress))
+    {
+        std::cerr << "Failed to initialize GLAD" << std::endl;
+        SDL_Quit();
+        return nullptr;
+    }
+    int windowWidth, windowHeight;
+    SDL_GetWindowSize(window, &windowWidth, &windowHeight);
 
-	glViewport(0, 0, windowWidth, windowHeight);
+    glViewport(0, 0, windowWidth, windowHeight);
 
-	glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 
-	constexpr int vertexSize = 6;
+    constexpr int vertexSize = 6;
 
-	VertexElement rectDesc =
-	{
-		.desc ={ { 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
-		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
-		},
-		.count = 2,
-	};
-	renderer->rectPipeline.vertexElement = rectDesc;
-	createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/triangle.fs");
+    VertexElement rectDesc = {
+        .desc =
+            {
+                {3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void *)0},
+                {3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void *)(3 * sizeof(float))},
+            },
+        .count = 2,
+    };
+    renderer->rectPipeline.vertexElement = rectDesc;
+    createPipeline(&renderer->rectPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/triangle.vs",
+                   GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/triangle.fs");
 
-	VertexElement lightDesc =
-	{
-		.desc = {
-		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)0 },
-		{ 3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void*)(3 * sizeof(float)) },
-		},
-		.count = 2,
-	};
-	renderer->lightPipeline.vertexElement = lightDesc;
-	createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.vs", GL_RESOURCE_DIRECTORY_PATH"/shaders/learning/light.fs");
+    VertexElement lightDesc = {
+        .desc =
+            {
+                {3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void *)0},
+                {3, GL_FLOAT, GL_FALSE, vertexSize * sizeof(float), (void *)(3 * sizeof(float))},
+            },
+        .count = 2,
+    };
+    renderer->lightPipeline.vertexElement = lightDesc;
+    createPipeline(&renderer->lightPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.vs",
+                   GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.fs");
 
-	memset(&renderer->circlePipeline, 0, sizeof(renderer->circlePipeline));
-	createPipeline(&renderer->circlePipeline);
+    memset(&renderer->circlePipeline, 0, sizeof(renderer->circlePipeline));
+    createPipeline(&renderer->circlePipeline);
 
-	memset(&renderer->spritePipeline, 0, sizeof(renderer->spritePipeline));
-	createPipeline(&renderer->spritePipeline);
+    memset(&renderer->spritePipeline, 0, sizeof(renderer->spritePipeline));
+    createPipeline(&renderer->spritePipeline);
 
-	renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH"/assets/textures/demon.png");
+    renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH "/assets/textures/demon.png");
 
-	return renderer;
+    return renderer;
 }
 
-static void createUnifroms(ppy_renderer* renderer)
+static void createUnifroms(ppy_renderer *renderer)
 {
-	//LIGHTBULB
-	static float3 lightPos = float3(0.6f, 0.5f, -1.0f);
-	static float3 lightColor = float3(1.0f, 1.0f, 1.0f);
-	
-	mat4x4 newTrLight = mat4x4(1.0f);
-	newTrLight = translate(newTrLight, lightPos);
-	newTrLight = scale(newTrLight, float3(0.25, 0.25, 0.25));
+    // LIGHTBULB
+    static float3 lightPos = float3(0.6f, 0.5f, -1.0f);
+    static float3 lightColor = float3(1.0f, 1.0f, 1.0f);
 
-	static mat4x4 trLight = newTrLight;
+    mat4x4 newTrLight = mat4x4(1.0f);
+    newTrLight = translate(newTrLight, lightPos);
+    newTrLight = scale(newTrLight, float3(0.25, 0.25, 0.25));
 
-	BindingElement lightBindings{
-		.desc = {
-			{ DataType::FLOAT3, "color", &lightColor },
-			{ DataType::MAT4x4, "transform", &trLight },
-		},
-		.count = 2
-	};
-	renderer->lightPipeline.binding = lightBindings;
-	
-	//CUBE
-	static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
-	static int texture = 1;
+    static mat4x4 trLight = newTrLight;
 
-	mat4x4 newModel = mat4x4(1.0f);
-	newModel = scale(newModel, float3(0.5, 0.5, 0.5));
-	newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
-	newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
+    BindingElement lightBindings{
+        .desc =
+            {
+                {DataType::FLOAT3, "color", &lightColor},
+                {DataType::MAT4x4, "transform", &trLight},
+            },
+        .count = 2,
+    };
+    renderer->lightPipeline.binding = lightBindings;
 
-	static mat4x4 model = newModel;
+    // CUBE
+    static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
+    static int texture = 1;
 
-	static mat4x4 view = mat4x4(1.0f);
-	//view = translate(view, float3(0.0f, 0.0f, -3.0f));
+    mat4x4 newModel = mat4x4(1.0f);
+    newModel = scale(newModel, float3(0.5, 0.5, 0.5));
+    newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
+    newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
 
-	//todo
-	static mat4x4 projection = mat4x4(1.0f);
-	//projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-	//// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's often best practice to set it outside the main loop only once.
+    static mat4x4 model = newModel;
 
-	BindingElement rectBindings{
-		.desc = 
-	{
-		{ DataType::FLOAT3, "objectColor", &objectColor },
-		{ DataType::FLOAT3, "lightColor", &lightColor },
-		{ DataType::FLOAT3, "lightPos", &lightPos },
-		{ DataType::INT, "texture", &texture }, //todo this could be texture binding?
-		{ DataType::MAT4x4, "model", &model },
-		{ DataType::MAT4x4, "view", &view },
-		{ DataType::MAT4x4, "projection", &projection },
-	},
-	.count = 7 
-	};
-	renderer->rectPipeline.binding = rectBindings;
+    static mat4x4 view = mat4x4(1.0f);
+    // view = translate(view, float3(0.0f, 0.0f, -3.0f));
+
+    // todo
+    static mat4x4 projection = mat4x4(1.0f);
+    // projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    //// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
+    /// often best practice to set it outside the main loop only once.
+
+    BindingElement rectBindings{
+        .desc =
+            {
+                {DataType::FLOAT3, "objectColor", &objectColor},
+                {DataType::FLOAT3, "lightColor", &lightColor},
+                {DataType::FLOAT3, "lightPos", &lightPos},
+                {DataType::INT, "texture", &texture}, // todo this could be texture binding?
+                {DataType::MAT4x4, "model", &model},
+                {DataType::MAT4x4, "view", &view},
+                {DataType::MAT4x4, "projection", &projection},
+            },
+        .count = 7,
+    };
+    renderer->rectPipeline.binding = rectBindings;
 }
 
-
-static void drawProgram( const ppy_graphicsPipeline* pipeline )
+static void drawProgram(const ppy_graphicsPipeline *pipeline)
 {
-	glUseProgram(pipeline->program.id );
-	glBindVertexArray(pipeline->VAO );
+    glUseProgram(pipeline->program.id);
+    glBindVertexArray(pipeline->VAO);
 
-	//todo is this needed here?
-	//glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
+    // todo is this needed here?
+    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
 
-	setUniform( pipeline );
-	glDrawArrays( GL_TRIANGLES, 0, 36 );
+    setUniform(pipeline);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
 }
 
-static void drawSprite(ppy_renderer* renderer)
+static void drawSprite(ppy_renderer *renderer)
 {
-	createUnifroms(renderer);
+    createUnifroms(renderer);
 
-	drawProgram( &renderer->lightPipeline );
-	drawProgram(&renderer->rectPipeline);
+    drawProgram(&renderer->lightPipeline);
+    drawProgram(&renderer->rectPipeline);
 
-	//todo check if texture ever works again lol
-	bindTexture(renderer->texutre);
-	glBindTexture(GL_TEXTURE_2D, renderer->texutre);
+    // todo check if texture ever works again lol
+    bindTexture(renderer->texutre);
+    glBindTexture(GL_TEXTURE_2D, renderer->texutre);
 
-	glBindVertexArray(0);
+    glBindVertexArray(0);
 
-	//unbinds?
-	//vao unbnd before ebo
-	//glDeleteVertexArrays(1, &VAO);
-	//glDeleteBuffers(1, &VBO);
-	//glDeleteBuffers(1, &EBO);
-	//glDeleteProgram(shaderProgram);
+    // unbinds?
+    // vao unbnd before ebo
+    // glDeleteVertexArrays(1, &VAO);
+    // glDeleteBuffers(1, &VBO);
+    // glDeleteBuffers(1, &EBO);
+    // glDeleteProgram(shaderProgram);
 }
 
-static void rendererDestroy(ppy_renderer* renderer)
+static void rendererDestroy(ppy_renderer *renderer)
 {
-	SDL_GL_DestroyContext(renderer->glContext);
-	SDL_free(renderer);
+    SDL_GL_DestroyContext(renderer->glContext);
+    SDL_free(renderer);
 };
 
-static ppy_api api = {
-	.create = rendererCreate,
-	.draw = drawSprite,
-	.destroy = rendererDestroy
-};
+static ppy_api api = {.create = rendererCreate, .draw = drawSprite, .destroy = rendererDestroy};
 
-ppy_api* ppy_get()
+ppy_api *ppy_get()
 {
-	return &api;
+    return &api;
 }
 
 /*
 enum class MaterialEditorShaderType
 {
-	Vertex,
-	Fragment
+    Vertex,
+    Fragment
 };
 
 enum class MaterialEditorShaderArgumentType
 {
-	Bool,
-	Int,
-	Float,
-	Texture
+    Bool,
+    Int,
+    Float,
+    Texture
 };
 
 struct MaterialEditorShaderArgument
 {
-	MaterialEditorShaderArgumentType type;
-	union
-	{
-		bool asBool;
-		int asInt;
-		float asFloat;
-		void* asTexture;
-	};
+    MaterialEditorShaderArgumentType type;
+    union
+    {
+        bool asBool;
+        int asInt;
+        float asFloat;
+        void* asTexture;
+    };
 };
 
 struct MaterialEditorParameters
 {
-	MaterialEditorShaderArgument* arguments;
-	int count;
+    MaterialEditorShaderArgument* arguments;
+    int count;
 };
 
 struct MaterialEditor
 {
-	const char* path;
-	MaterialEditorParameters parameters;
+    const char* path;
+    MaterialEditorParameters parameters;
 };
 */
-
