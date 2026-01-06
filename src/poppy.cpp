@@ -13,7 +13,7 @@
 #include <sstream>
 
 #define vertexDescSize 8
-#define bindingSize 16
+#define uniformDescSize 16
 
 // Todo, make whole binding entry a macro for niceness
 #define nameof(type, member) sizeof(((type *)NULL)->member) ? #member : ""
@@ -54,9 +54,9 @@ struct UniformBinding
     size_t offset;
 };
 
-struct BindingElement
+struct UniformDesc
 {
-    UniformBinding desc[bindingSize];
+    UniformBinding desc[uniformDescSize];
     size_t count;
 };
 
@@ -64,25 +64,29 @@ struct ppy_graphicsPipeline
 {
     ppy_program program;
     VertexElement vertexElement;
-    BindingElement binding; //todo this out
     unsigned int VBO;
     unsigned int VAO;
+
+    // how uniform binding looks like
+    UniformDesc uniformDescs[64];
+    size_t uniformDescCount;
 };
 
-struct ppy_graphicsLightPipeline
+struct ppy_lightPipeline
 {
     ppy_graphicsPipeline gpuPipeline;
 
+    //uniform binding data
     struct LightUniform
     {
         float3 color;
         mat4x4 transform;
     };
     LightUniform uniforms[64];
-    size_t count;
+    size_t uniformCount;
 };
 
-struct ppy_graphicsRectPipeline
+struct ppy_rectPipeline
 {
     ppy_graphicsPipeline gpuPipeline;
 
@@ -116,12 +120,12 @@ struct ppy_graphicsSpritePipeline
 struct ppy_renderer
 {
     SDL_GLContext glContext;
-    ppy_graphicsRectPipeline rectPipeline;
-    ppy_graphicsLightPipeline lightPipeline;
+    ppy_rectPipeline rectPipeline;
+    ppy_lightPipeline lightPipeline;
     ppy_graphicsPipeline circlePipeline;
     ppy_graphicsSpritePipeline spritePipeline;
 
-    unsigned int texutre;
+    unsigned int texture;
 };
 
 // ==========================================================
@@ -399,7 +403,7 @@ void setMat4x4(unsigned int programId, const std::string &name, void *value)
     glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform(unsigned int programId, const BindingElement *bindingElements, void *data)
+static void setUniform(unsigned int programId, const UniformDesc *bindingElements, void *data)
 {
     char *bytes = (char *)data;
 
@@ -459,6 +463,7 @@ void createPipeline(ppy_graphicsPipeline *pipeline, const char *vertexPath = nul
 ppy_renderer *rendererCreate(SDL_Window *window)
 {
     ppy_renderer *renderer = (ppy_renderer *)SDL_malloc(sizeof(*renderer));
+    memset(renderer, 0, sizeof(*renderer));
 
     // Set OpenGL attributes
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
@@ -515,13 +520,10 @@ ppy_renderer *rendererCreate(SDL_Window *window)
     createPipeline(&renderer->lightPipeline.gpuPipeline, GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.vs",
                    GL_RESOURCE_DIRECTORY_PATH "/shaders/learning/light.fs");
 
-    memset(&renderer->circlePipeline, 0, sizeof(renderer->circlePipeline));
     createPipeline(&renderer->circlePipeline);
-
-    memset(&renderer->spritePipeline, 0, sizeof(renderer->spritePipeline));
     createPipeline(&renderer->spritePipeline.gpuPipeline);
 
-    renderer->texutre = loadImage(GL_RESOURCE_DIRECTORY_PATH "/assets/textures/demon.png");
+    renderer->texture = loadImage(GL_RESOURCE_DIRECTORY_PATH "/assets/textures/demon.png");
 
     return renderer;
 }
@@ -584,8 +586,9 @@ static void createUnifroms(ppy_renderer *renderer)
     renderer->rectPipeline.gpuPipeline.binding = rectBindings;
 }
 
-static void drawSprite(ppy_renderer *renderer)
+static void drawPipelines(ppy_renderer *renderer)
 {
+    //todo this once or always?
     createUniforms(renderer);
 
     float3 lightPos = float3(0.6f, 0.5f, -1.0f);
@@ -610,11 +613,11 @@ static void drawSprite(ppy_renderer *renderer)
     mat4x4 view = mat4x4(1.0f);
     mat4x4 projection = mat4x4(1.0f);
 
-    ppy_graphicsLightPipeline::LightUniform lightElement = {
+    ppy_lightPipeline::LightUniform lightElement = {
         .color = lightColor,
         .transform = trLight,
     };
-    ppy_graphicsRectPipeline::RectUniform rectElement = {
+    ppy_rectPipeline::RectUniform rectElement = {
         .objectColor = objectColor,
         .lightColor = lightColor,
         .lightPos = lightPos,
@@ -627,7 +630,7 @@ static void drawSprite(ppy_renderer *renderer)
     //light
     glUseProgram(renderer->lightPipeline.gpuPipeline.program.id);
     glBindVertexArray(renderer->lightPipeline.gpuPipeline.VAO);
-    setUniform(renderer->lightPipeline.gpuPipeline.program.id, &renderer->lightPipeline.gpuPipeline.binding, &lightElement);
+    setUniform(renderer->lightPipeline.gpuPipeline.program.id, &renderer->lightPipeline.gpuPipeline.uniformDescs[0], &lightElement);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     //rect
@@ -635,14 +638,14 @@ static void drawSprite(ppy_renderer *renderer)
     glBindVertexArray(renderer->rectPipeline.gpuPipeline.VAO);
 
     // todo is this needed here?
-    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.VBO);
+    //glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.gpuPipeline.VBO);
 
-    setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.binding, &rectElement);
+    setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.uniformDescs[0], &rectElement);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
     // todo check if texture ever works again lol
-    bindTexture(renderer->texutre);
-    glBindTexture(GL_TEXTURE_2D, renderer->texutre);
+    bindTexture(renderer->texture);
+    glBindTexture(GL_TEXTURE_2D, renderer->texture);
 
     glBindVertexArray(0);
 
@@ -660,7 +663,7 @@ static void rendererDestroy(ppy_renderer *renderer)
     SDL_free(renderer);
 };
 
-static ppy_api api = {.create = rendererCreate, .draw = drawSprite, .destroy = rendererDestroy};
+static ppy_api api = {.create = rendererCreate, .draw = drawPipelines, .destroy = rendererDestroy};
 
 ppy_api *ppy_get()
 {
