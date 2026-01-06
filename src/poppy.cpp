@@ -403,13 +403,13 @@ void setMat4x4(unsigned int programId, const std::string &name, void *value)
     glUniformMatrix4fv(glGetUniformLocation(programId, name.c_str()), 1, GL_FALSE, valueMat4x4.elements);
 }
 
-static void setUniform(unsigned int programId, const UniformDesc *bindingElements, void *data)
+static void setUniform(unsigned int programId, const UniformDesc *uniformDescriptions, void *data)
 {
     char *bytes = (char *)data;
 
-    for(size_t bindingIndex = 0; bindingIndex < bindingElements->count; bindingIndex++)
+    for(size_t bindingIndex = 0; bindingIndex < uniformDescriptions->count; bindingIndex++)
     {
-        const UniformBinding binding = bindingElements->desc[bindingIndex];
+        const UniformBinding binding = uniformDescriptions->desc[bindingIndex];
         char *dataAt = bytes + (size_t)binding.offset;
         switch(binding.type)
         {
@@ -544,7 +544,7 @@ static void createUniforms(ppy_renderer *renderer)
         .count = 2,
     };
     renderer->lightPipeline.gpuPipeline.uniformDescs[0] = lightBindings;
-    renderer->lightPipeline.gpuPipeline.uniformDescs->count = 1;
+    renderer->lightPipeline.gpuPipeline.uniformDescCount = 1;
 
     UniformDesc rectBindings{
         .desc =
@@ -567,7 +567,7 @@ static void createUniforms(ppy_renderer *renderer)
         .count = 7,
     };
     renderer->rectPipeline.gpuPipeline.uniformDescs[0] = rectBindings;
-    renderer->rectPipeline.gpuPipeline.uniformDescs->count = 1; //todo when to set this count?
+    renderer->rectPipeline.gpuPipeline.uniformDescCount = 1; // todo when to set this count?
 
     UniformDesc greenRectBindings{
         .desc =
@@ -589,8 +589,8 @@ static void createUniforms(ppy_renderer *renderer)
             },
         .count = 7,
     };
-   // renderer->rectPipeline.gpuPipeline.uniformDescs[1] = greenRectBindings;
-    //renderer->rectPipeline.gpuPipeline.uniformDescs->count = 2;
+    renderer->rectPipeline.gpuPipeline.uniformDescs[1] = greenRectBindings;
+    renderer->rectPipeline.gpuPipeline.uniformDescCount = 2;
 }
 
 static void drawPipelines(ppy_renderer *renderer)
@@ -611,14 +611,26 @@ static void drawPipelines(ppy_renderer *renderer)
     float3 objectColor = float3(1.0f, 0.5f, 0.31f);
     int texture = 1;
 
-    mat4x4 newModel = mat4x4(1.0f);
-    newModel = scale(newModel, float3(0.5, 0.5, 0.5));
-    newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
-    newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
+    mat4x4 model = mat4x4(1.0f);
+    model = scale(model, float3(0.5, 0.5, 0.5));
+    model = rotationX(model, (float)SDL_GetTicks() * 0.0002);
+    model = rotationY(model, (float)SDL_GetTicks() * 0.0002);
 
-    mat4x4 model = newModel;
-    mat4x4 view = mat4x4(1.0f);
-    mat4x4 projection = mat4x4(1.0f);
+    mat4x4 model2 = mat4x4(1.0f);
+    model2 = translate(model2, float3(-1, 0, 0));
+    model2 = scale(model2, float3(0.5, 0.5, 0.5));
+    model2 = rotationX(model2, (float)SDL_GetTicks() * 0.0002);
+    model2 = rotationY(model2, (float)SDL_GetTicks() * 0.0002);
+
+    static mat4x4 view = mat4x4(1.0f);
+    //view = translate(view, float3(0.0f, 0.0f, -3.0f));
+
+    // todo
+    static mat4x4 projection = mat4x4(1.0f);
+    // projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+    //// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
+    /// often best practice to set it outside the main loop only once.
+
 
     ppy_lightPipeline::LightUniform lightElement = {
         .color = lightColor,
@@ -633,12 +645,25 @@ static void drawPipelines(ppy_renderer *renderer)
         .view = view,
         .projection = projection,
     };
+    ppy_rectPipeline::RectUniform greenRectElement = {
+        .objectColor = float3(0,1,0),
+        .lightColor = lightColor,
+        .lightPos = lightPos,
+        .texture = texture,
+        .model = model2,
+        .view = view,
+        .projection = projection,
+    };
 
     //light
     glUseProgram(renderer->lightPipeline.gpuPipeline.program.id);
     glBindVertexArray(renderer->lightPipeline.gpuPipeline.VAO);
     setUniform(renderer->lightPipeline.gpuPipeline.program.id, &renderer->lightPipeline.gpuPipeline.uniformDescs[0], &lightElement);
     glDrawArrays(GL_TRIANGLES, 0, 36);
+
+    // todo check if texture ever works again lol
+    bindTexture(renderer->texture);
+    glBindTexture(GL_TEXTURE_2D, renderer->texture);
 
     //rect
     glUseProgram(renderer->rectPipeline.gpuPipeline.program.id);
@@ -650,9 +675,17 @@ static void drawPipelines(ppy_renderer *renderer)
     setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.uniformDescs[0], &rectElement);
     glDrawArrays(GL_TRIANGLES, 0, 36);
 
-    // todo check if texture ever works again lol
-    bindTexture(renderer->texture);
-    glBindTexture(GL_TEXTURE_2D, renderer->texture);
+    //green rect
+    glUseProgram(renderer->rectPipeline.gpuPipeline.program.id);
+    glBindVertexArray(renderer->rectPipeline.gpuPipeline.VAO);
+
+    // todo is this needed here?
+    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.gpuPipeline.VBO);
+
+    setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.uniformDescs[1],
+               &greenRectElement);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
     glBindVertexArray(0);
 
