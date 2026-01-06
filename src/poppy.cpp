@@ -528,62 +528,69 @@ ppy_renderer *rendererCreate(SDL_Window *window)
     return renderer;
 }
 
-static void createUnifroms(ppy_renderer *renderer)
+static void createUniforms(ppy_renderer *renderer)
 {
-    // LIGHTBULB
-    static float3 lightPos = float3(0.6f, 0.5f, -1.0f);
-    static float3 lightColor = float3(1.0f, 1.0f, 1.0f);
+    //todo function draw rect, light and whatever else for each pipeline
+    //then make draw model with certain shader
 
-    mat4x4 newTrLight = mat4x4(1.0f);
-    newTrLight = translate(newTrLight, lightPos);
-    newTrLight = scale(newTrLight, float3(0.25, 0.25, 0.25));
-
-    static mat4x4 trLight = newTrLight;
-
-    BindingElement lightBindings{
+    UniformDesc lightBindings{
         .desc =
             {
-                {DataType::FLOAT3, "color", offsetof(ppy_graphicsLightPipeline::LightUniform, color)},
-                {DataType::MAT4x4, "transform", offsetof(ppy_graphicsLightPipeline::LightUniform, transform)},
+                {DataType::FLOAT3, nameof(ppy_lightPipeline::LightUniform, color),
+                 offsetof(ppy_lightPipeline::LightUniform, color)},
+                {DataType::MAT4x4, nameof(ppy_lightPipeline::LightUniform, transform),
+                 offsetof(ppy_lightPipeline::LightUniform, transform)},
             },
         .count = 2,
     };
-    renderer->lightPipeline.gpuPipeline.binding = lightBindings;
+    renderer->lightPipeline.gpuPipeline.uniformDescs[0] = lightBindings;
+    renderer->lightPipeline.gpuPipeline.uniformDescs->count = 1;
 
-    // CUBE
-    static float3 objectColor = float3(1.0f, 0.5f, 0.31f);
-    static int texture = 1;
-
-    mat4x4 newModel = mat4x4(1.0f);
-    newModel = scale(newModel, float3(0.5, 0.5, 0.5));
-    newModel = rotationX(newModel, (float)SDL_GetTicks() * 0.0002);
-    newModel = rotationY(newModel, (float)SDL_GetTicks() * 0.0002);
-
-    static mat4x4 model = newModel;
-
-    static mat4x4 view = mat4x4(1.0f);
-    // view = translate(view, float3(0.0f, 0.0f, -3.0f));
-
-    // todo
-    static mat4x4 projection = mat4x4(1.0f);
-    // projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-    //// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
-    /// often best practice to set it outside the main loop only once.
-
-    BindingElement rectBindings{
+    UniformDesc rectBindings{
         .desc =
             {
-                {DataType::FLOAT3, "objectColor", offsetof(ppy_graphicsRectPipeline::RectUniform, objectColor)},
-                {DataType::FLOAT3, "lightColor", offsetof(ppy_graphicsRectPipeline::RectUniform, lightColor)},
-                {DataType::FLOAT3, "lightPos", offsetof(ppy_graphicsRectPipeline::RectUniform, lightPos)},
-                {DataType::INT, "texture", offsetof(ppy_graphicsRectPipeline::RectUniform, texture)}, // todo texture binding?
-                {DataType::MAT4x4, "model", offsetof(ppy_graphicsRectPipeline::RectUniform, model)},
-                {DataType::MAT4x4, "view", offsetof(ppy_graphicsRectPipeline::RectUniform, view)},
-                {DataType::MAT4x4, "projection", offsetof(ppy_graphicsRectPipeline::RectUniform, projection)},
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, objectColor),
+                 offsetof(ppy_rectPipeline::RectUniform, objectColor)},
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, lightColor),
+                 offsetof(ppy_rectPipeline::RectUniform, lightColor)},
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, lightPos),
+                 offsetof(ppy_rectPipeline::RectUniform, lightPos)},
+                {DataType::INT, nameof(ppy_rectPipeline::RectUniform, texture),
+                 offsetof(ppy_rectPipeline::RectUniform, texture)}, // todo texture binding?
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, model),
+                 offsetof(ppy_rectPipeline::RectUniform, model)},
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, view),
+                 offsetof(ppy_rectPipeline::RectUniform, view)},
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, projection),
+                 offsetof(ppy_rectPipeline::RectUniform, projection)},
             },
         .count = 7,
     };
-    renderer->rectPipeline.gpuPipeline.binding = rectBindings;
+    renderer->rectPipeline.gpuPipeline.uniformDescs[0] = rectBindings;
+    renderer->rectPipeline.gpuPipeline.uniformDescs->count = 1; //todo when to set this count?
+
+    UniformDesc greenRectBindings{
+        .desc =
+            {
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, objectColor),
+                 offsetof(ppy_rectPipeline::RectUniform, objectColor)},
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, lightColor),
+                 offsetof(ppy_rectPipeline::RectUniform, lightColor)},
+                {DataType::FLOAT3, nameof(ppy_rectPipeline::RectUniform, lightPos),
+                 offsetof(ppy_rectPipeline::RectUniform, lightPos)},
+                {DataType::INT, nameof(ppy_rectPipeline::RectUniform, texture),
+                 offsetof(ppy_rectPipeline::RectUniform, texture)}, // todo texture binding?
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, model),
+                 offsetof(ppy_rectPipeline::RectUniform, model)},
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, view),
+                 offsetof(ppy_rectPipeline::RectUniform, view)},
+                {DataType::MAT4x4, nameof(ppy_rectPipeline::RectUniform, projection),
+                 offsetof(ppy_rectPipeline::RectUniform, projection)},
+            },
+        .count = 7,
+    };
+   // renderer->rectPipeline.gpuPipeline.uniformDescs[1] = greenRectBindings;
+    //renderer->rectPipeline.gpuPipeline.uniformDescs->count = 2;
 }
 
 static void drawPipelines(ppy_renderer *renderer)
