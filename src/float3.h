@@ -85,3 +85,8 @@ void print(float3 vec)
 {
     std::cout << vec.x << " " << vec.y << " " << vec.z << std::endl;
 }
+
+float toRad(float angle)
+{
+    return angle * (3.14f / 180.0f);
+}

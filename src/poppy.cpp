@@ -6,6 +6,8 @@
 
 #include "float3.h"
 #include "mat4x4.h"
+
+#include <assert.h>
 #include <filesystem>
 #include <fstream>
 #include <glad/glad.h>
@@ -491,6 +493,9 @@ ppy_renderer *rendererCreate(SDL_Window *window)
     SDL_GetWindowSize(window, &windowWidth, &windowHeight);
 
     glViewport(0, 0, windowWidth, windowHeight);
+    int dim[4];
+    glGetIntegerv(GL_VIEWPORT, dim);
+    assert(dim[2] == windowWidth && dim[3] == windowHeight);
 
     glEnable(GL_DEPTH_TEST);
 
@@ -622,15 +627,16 @@ static void drawPipelines(ppy_renderer *renderer)
     model2 = rotationX(model2, (float)SDL_GetTicks() * 0.0002);
     model2 = rotationY(model2, (float)SDL_GetTicks() * 0.0002);
 
-    static mat4x4 view = mat4x4(1.0f);
-    //view = translate(view, float3(0.0f, 0.0f, -3.0f));
+    mat4x4 view = mat4x4(1.0f);
+    view = translate(view, float3(0.0f, 0.0f, -3.0f));
 
     // todo
-    static mat4x4 projection = mat4x4(1.0f);
-    // projection = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
     //// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
     /// often best practice to set it outside the main loop only once.
-
+    mat4x4 projection = mat4x4(1.0f);
+    int dim[4];
+    glGetIntegerv(GL_VIEWPORT, dim);
+    mat4_perspective(toRad(45.0f), (float)dim[2] / (float)dim[3], 0.1f, 100.0f, projection.elements);
 
     ppy_lightPipeline::LightUniform lightElement = {
         .color = lightColor,
@@ -678,9 +684,6 @@ static void drawPipelines(ppy_renderer *renderer)
     //green rect
     glUseProgram(renderer->rectPipeline.gpuPipeline.program.id);
     glBindVertexArray(renderer->rectPipeline.gpuPipeline.VAO);
-
-    // todo is this needed here?
-    // glBindBuffer(GL_ARRAY_BUFFER, renderer->rectPipeline.gpuPipeline.VBO);
 
     setUniform(renderer->rectPipeline.gpuPipeline.program.id, &renderer->rectPipeline.gpuPipeline.uniformDescs[1],
                &greenRectElement);
