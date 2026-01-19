@@ -535,6 +535,11 @@ ppy_renderer *rendererCreate(SDL_Window *window)
     return renderer;
 }
 
+static void rendererResize( float width, float height )
+{
+    renderer.projection = mat4_perspective(45.0f, (float)width] / (float)height, 0.1f, 100.0f);
+}
+
 static void createUniforms(ppy_renderer *renderer)
 {
     //todo function draw rect, light and whatever else for each pipeline
@@ -700,7 +705,8 @@ static void rendererDestroy(ppy_renderer *renderer)
     SDL_free(renderer);
 };
 
-static ppy_api api = {.create = rendererCreate, .draw = drawPipelines, .destroy = rendererDestroy};
+static ppy_api api = {.create = rendererCreate, .draw = drawPipelines, .destroy = rendererDestroy,
+.resize = renderedResize,};
 
 ppy_api *ppy_get()
 {
