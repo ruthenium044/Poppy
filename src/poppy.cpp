@@ -636,7 +636,8 @@ static void drawPipelines(ppy_renderer *renderer)
 
     mat4x4 view = mat4x4(1.0f);
     view = translate(view, float3(0.0f, 0.0f, -3.0f));
-
+    mat4x4 projection = renderer.projection;
+    
     ppy_lightPipeline::LightUniform lightElement = {
         .color = lightColor,
         .transform = trLight,
