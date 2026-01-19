@@ -46,7 +46,7 @@ int main()
             if(e.type == SDL_EVENT_WINDOW_RESIZED)
             {
                 mat4x4 projection = mat4_perspective(45.0f, (float)e.window.data1 / (float)e.window.data2, 0.1f, 100.0f);
-                ppy->resize();
+                ppy->resize(e.window.data1, e.window.data2);
                 glViewport(0, 0, e.window.data1, e.window.data2);
             }
 
