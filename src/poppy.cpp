@@ -128,6 +128,8 @@ struct ppy_renderer
     ppy_graphicsSpritePipeline spritePipeline;
 
     unsigned int texture;
+
+    mat4x4 projection; 
 };
 
 // ==========================================================
@@ -629,14 +631,6 @@ static void drawPipelines(ppy_renderer *renderer)
 
     mat4x4 view = mat4x4(1.0f);
     view = translate(view, float3(0.0f, 0.0f, -3.0f));
-
-    // todo
-    //// note: currently we set the projection matrix each frame, but since the projection matrix rarely changes it's
-    /// often best practice to set it outside the main loop only once.
-    mat4x4 projection = mat4x4(1.0f);
-    int dim[4];
-    glGetIntegerv(GL_VIEWPORT, dim);
-    mat4_perspective(toRad(45.0f), (float)dim[2] / (float)dim[3], 0.1f, 100.0f, projection.elements);
 
     ppy_lightPipeline::LightUniform lightElement = {
         .color = lightColor,
