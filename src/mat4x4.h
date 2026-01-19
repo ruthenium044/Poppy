@@ -178,18 +178,21 @@ void print(mat4x4 mat)
     std::cout << mat.m30 << " " << mat.m31 << " " << mat.m32 << " " << mat.m33 << std::endl;
 }
 
-void mat4_perspective(float fovy_rad, float aspect, float near, float far, float result[16])
+mat4x4 mat4_perspective(float angles, float aspect, float near, float far)
 {
-    float f = 1.0f / tanf(fovy_rad / 2.0f);
+    mat4x4 result = mat4x4(1.0f);
+    float rad = toRad(angles);
+    float f = 1.0f / tanf(rad / 2.0f);
     float nf = 1.0f / (near - far);
 
     // Initialize all to zero
     for(int i = 0; i < 16; i++)
-        result[i] = 0.0f;
+        result.elements[i] = 0.0f;
 
-    result[0] = f / aspect;
-    result[5] = f;
-    result[10] = (far + near) * nf;
-    result[11] = -1.0f;
-    result[14] = (2.0f * far * near) * nf;
+    result.elements[0] = f / aspect;
+    result.elements[5] = f;
+    result.elements[10] = (far + near) * nf;
+    result.elements[11] = -1.0f;
+    result.elements[14] = (2.0f * far * near) * nf;
+    return result;
 }
