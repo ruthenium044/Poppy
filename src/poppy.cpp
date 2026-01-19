@@ -536,7 +536,7 @@ ppy_renderer *rendererCreate(SDL_Window *window)
 }
 
 static void rendererResize( float width, float height )
-{
+{  
     renderer.projection = mat4_perspective(45.0f, (float)width] / (float)height, 0.1f, 100.0f);
 }
 
